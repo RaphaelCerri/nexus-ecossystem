@@ -85,6 +85,13 @@ export default function App() {
 
   const roleLabel = ROLES.find(r => r.value === role)?.label ?? role;
 
+  // mantém a sessão persistida em sincronia ao trocar o papel pela sidebar
+  const handleRoleChange = (r: Role) => {
+    setRole(r);
+    const session = loadSession();
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, role: r }));
+  };
+
   function renderKickoffLanding() {
     return (
       <Box
@@ -214,7 +221,7 @@ export default function App() {
       {showIntro && <IntroScreen onDone={() => setShowIntro(false)} />}
 
       {!inKickoffFullscreen && (
-        <Sidebar current={page as 'kickoff' | 'projetos' | 'ferramentas' | 'dashboard' | 'config'} onNavigate={handleNavigate} role={role} onRoleChange={setRole} userName={userName} onLogout={handleLogout} />
+        <Sidebar current={page as 'kickoff' | 'projetos' | 'ferramentas' | 'dashboard' | 'config'} onNavigate={handleNavigate} role={role} onRoleChange={handleRoleChange} userName={userName} onLogout={handleLogout} />
       )}
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>

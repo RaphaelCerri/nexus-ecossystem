@@ -20,13 +20,26 @@ import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import { ROLES } from '../components/Sidebar';
 import type { Role } from '../components/Sidebar';
+import { generateSalt, hashPassword, verifyPassword } from '../lib/passwordHash';
+import { safeJsonParse } from '../lib/security';
 
 // ─── Local user storage ───────────────────────────────────────────────────────
-interface StoredUser { name: string; email: string; password: string; role: Role; }
+// Senha nunca é guardada em texto puro: apenas salt + hash PBKDF2.
+// `password` permanece no tipo só para migrar contas antigas no próximo login.
+interface StoredUser {
+  name: string;
+  email: string;
+  role: Role;
+  salt?: string;
+  passwordHash?: string;
+  /** legado (texto puro) — removido automaticamente na migração */
+  password?: string;
+}
 const USERS_KEY = 'nexus_users';
 
 function getUsers(): Record<string, StoredUser> {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) ?? '{}'); } catch { return {}; }
+  try { return (safeJsonParse(localStorage.getItem(USERS_KEY) ?? '{}') as Record<string, StoredUser>) ?? {}; }
+  catch { return {}; }
 }
 function saveUser(u: StoredUser) {
   const users = getUsers();
@@ -35,6 +48,28 @@ function saveUser(u: StoredUser) {
 }
 function findUser(email: string): StoredUser | null {
   return getUsers()[email] ?? null;
+}
+
+async function createUser(name: string, email: string, senha: string, role: Role): Promise<void> {
+  const salt = generateSalt();
+  const passwordHash = await hashPassword(senha, salt);
+  saveUser({ name, email, role, salt, passwordHash });
+}
+
+/** Verifica a senha; migra contas legadas (texto puro) para salt+hash. */
+async function checkPassword(user: StoredUser, senha: string): Promise<boolean> {
+  if (user.salt && user.passwordHash) {
+    return verifyPassword(senha, user.salt, user.passwordHash);
+  }
+  // conta legada: compara texto puro e migra imediatamente para hash
+  if (user.password !== undefined) {
+    if (user.password !== senha) return false;
+    const salt = generateSalt();
+    const passwordHash = await hashPassword(senha, salt);
+    saveUser({ name: user.name, email: user.email, role: user.role, salt, passwordHash });
+    return true;
+  }
+  return false;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -192,6 +227,14 @@ export function LoginPage({ onLogin }: Props) {
             : <RegistroForm onSubmit={submit} />
           }
 
+          {/* Aviso: autenticação local (sem backend) */}
+          <Box sx={{ mt: '16px', p: '8px 12px', borderRadius: '8px', bgcolor: 'rgba(255,197,0,0.06)', border: '1px solid rgba(255,197,0,0.18)' }}>
+            <Typography sx={{ fontSize: 10.5, color: 'rgba(255,197,0,0.75)', lineHeight: 1.55, textAlign: 'center' }}>
+              Ambiente de demonstração — autenticação local, sem servidor. Os dados ficam
+              apenas neste navegador. Não use sua senha corporativa real.
+            </Typography>
+          </Box>
+
           {/* Footer */}
           <Typography sx={{ mt: '18px', fontSize: 11, color: 'rgba(255,255,255,0.16)', textAlign: 'center', letterSpacing: '.3px' }}>
             Acesso restrito ·{' '}
@@ -220,11 +263,11 @@ function LoginForm({ onSubmit }: { onSubmit: (nome: string, role: Role) => void 
 
   const handleEmail = (v: string) => setEmail(v.replace(/[^a-zA-Z0-9@._+\-]/g, '').toLowerCase());
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
     const user = findUser(email);
     if (!user) { setError('Usuário não encontrado. Crie uma conta primeiro.'); return; }
-    if (user.password !== senha) { setError('Senha incorreta.'); return; }
+    if (!(await checkPassword(user, senha))) { setError('Senha incorreta.'); return; }
     onSubmit(user.name, user.role);
   };
 
@@ -310,10 +353,10 @@ function RegistroForm({ onSubmit }: { onSubmit: (nome: string, role: Role) => vo
   const handleNome = (v: string) => setNome(toTitleCase(v));
   const handleEmail = (v: string) => setEmail(v.replace(/[^a-zA-Z0-9@._+\-]/g, '').toLowerCase());
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
     if (findUser(email)) { setError('E-mail já cadastrado. Faça login.'); return; }
-    saveUser({ name: nome.trim(), email, password: senha, role: role as Role });
+    await createUser(nome.trim(), email, senha, role as Role);
     onSubmit(nome.trim(), role as Role);
   };
 

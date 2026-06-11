@@ -11,7 +11,18 @@ import FolderOpenRoundedIcon from '@mui/icons-material/FolderOpenRounded';
 import { ProjectPickerModal } from '../../components/ProjectPickerModal';
 import type { NexusProject } from '../../lib/projectStore';
 import { generateDocx } from '../../lib/docxBuilder';
-import type { InputJson } from '../../lib/docxBuilder';
+import type { InputJson, UserInfo } from '../../lib/docxBuilder';
+import { readUploadAsText, safeJsonParse, validateInputJson } from '../../lib/security';
+
+function getCurrentUser(): UserInfo | undefined {
+  try {
+    const session = JSON.parse(localStorage.getItem('nexus_session') ?? 'null') as { name: string } | null;
+    if (!session?.name) return undefined;
+    const users = JSON.parse(localStorage.getItem('nexus_users') ?? '{}') as Record<string, { name: string }>;
+    const match = Object.entries(users).find(([, u]) => u.name === session.name);
+    return { name: session.name, email: match ? match[0] : '' };
+  } catch { return undefined; }
+}
 
 export function GerarDocumento() {
   const [pickerOpen,     setPickerOpen]     = useState(false);
@@ -21,32 +32,36 @@ export function GerarDocumento() {
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState<string | null>(null);
   const [lastGenerated,  setLastGenerated]  = useState<string | null>(null);
+  const [removedCount,   setRemovedCount]   = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // reset so the same file can be re-selected
+    e.target.value = '';
     if (!file) return;
     setError(null);
     setLastGenerated(null);
     setInputFilename(file.name);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target?.result as string) as InputJson;
-        if (!parsed.meta || !parsed.capitulos) {
-          setError('JSON inválido: campos "meta" e "capitulos" são obrigatórios.');
-          setInputJson(null);
-          return;
-        }
-        setInputJson(parsed);
-      } catch {
-        setError('Arquivo inválido: não é um JSON válido.');
-        setInputJson(null);
+    setInputJson(null);
+    if (!/\.json$/i.test(file.name)) {
+      setError('Selecione um arquivo .json.');
+      return;
+    }
+    try {
+      const text = await readUploadAsText(file);
+      const parsed = safeJsonParse(text);
+      const validation = validateInputJson(parsed);
+      if (!validation.ok) {
+        setError('JSON inválido: ' + validation.errors.slice(0, 5).join(' '));
+        return;
       }
-    };
-    reader.readAsText(file, 'utf-8');
-    // reset so the same file can be re-selected
-    e.target.value = '';
+      setInputJson(parsed as InputJson);
+    } catch (err) {
+      setError(err instanceof SyntaxError
+        ? 'Arquivo inválido: não é um JSON válido.'
+        : err instanceof Error ? err.message : 'Falha ao ler o arquivo.');
+    }
   };
 
   const handleGenerate = async () => {
@@ -58,7 +73,7 @@ export function GerarDocumento() {
       const resp = await fetch('/ES_PLACEHOLDER_v6.docx');
       if (!resp.ok) throw new Error('Template não encontrado. Contate o administrador.');
       const templateBytes = await resp.arrayBuffer();
-      const result = await generateDocx(templateBytes, inputJson);
+      const result = await generateDocx(templateBytes, inputJson, getCurrentUser());
 
       const url = URL.createObjectURL(result.blob);
       const a = document.createElement('a');
@@ -68,6 +83,7 @@ export function GerarDocumento() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setRemovedCount(result.internalBlocksRemoved.length);
       setLastGenerated(result.filename);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido ao gerar documento.');
@@ -176,6 +192,11 @@ export function GerarDocumento() {
       {lastGenerated && !error && (
         <Alert severity="success" sx={{ mb: 2, fontSize: 12 }}>
           Download iniciado: <strong>{lastGenerated}</strong>
+          {removedCount > 0 && (
+            <Box component="span" sx={{ display: 'block', mt: '4px', fontSize: 11, opacity: 0.85 }}>
+              {removedCount} bloco{removedCount > 1 ? 's' : ''} interno{removedCount > 1 ? 's' : ''} ([OBS INTERNA] / [ATENÇÃO CRÍTICA]) removido{removedCount > 1 ? 's' : ''} do documento.
+            </Box>
+          )}
         </Alert>
       )}
 

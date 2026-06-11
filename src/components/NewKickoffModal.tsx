@@ -17,6 +17,7 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded';
 import type { NexusProject } from '../lib/projectStore';
 import { generateCode, generateId, upsertProject } from '../lib/projectStore';
+import { isDangerousKey, readUploadAsText, safeJsonParse } from '../lib/security';
 
 interface Props {
   open: boolean;
@@ -99,39 +100,53 @@ export function NewKickoffModal({ open, onClose, onCreate }: Props) {
     reset();
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setImportError('');
     setImportedData(null);
-    const rd = new FileReader();
-    rd.onload = (ev) => {
-      try {
-        const j = JSON.parse(ev.target?.result as string);
-        const flat: Record<string, string> = {};
-        if (j.sections) {
-          Object.values(j.sections).forEach((sec: unknown) => {
-            if (sec && typeof sec === 'object') {
-              Object.entries(sec as Record<string, string>).forEach(([k, v]) => { flat[k] = v; });
-            }
-          });
-        }
-        const answerCount = Object.values(flat).filter(v => v && v !== '').length;
-        setImportedData({
-          client: flat.g1 || j.meta?.project || '',
-          name: flat.g2 || '',
-          answers: flat,
-          notes: (j.notes as Record<string, string>) || {},
-          pblLines: Array.isArray(j.pbl_lines) ? j.pbl_lines : [],
-          osDevices: Array.isArray(j.os_devices) ? j.os_devices : [],
-          mezDetails: Array.isArray(j.mez_details) ? j.mez_details : [],
-          etiquetas: Array.isArray(j.etiquetas_custom) ? j.etiquetas_custom : [],
-          fileName: file.name,
-          answerCount,
-        });
-      } catch {
+    try {
+      const text = await readUploadAsText(file);
+      const j = safeJsonParse(text) as Record<string, unknown>;
+      if (!j || typeof j !== 'object' || Array.isArray(j)) {
         setImportError('Arquivo inválido. Certifique-se de selecionar um JSON exportado pelo Nexus.');
+        return;
       }
-    };
-    rd.readAsText(file);
+      const flat: Record<string, string> = {};
+      if (j.sections && typeof j.sections === 'object') {
+        Object.values(j.sections).forEach((sec: unknown) => {
+          if (sec && typeof sec === 'object' && !Array.isArray(sec)) {
+            Object.entries(sec as Record<string, unknown>).forEach(([k, v]) => {
+              if (isDangerousKey(k)) return;
+              if (typeof v === 'string') flat[k] = v;
+            });
+          }
+        });
+      }
+      const notes: Record<string, string> = {};
+      if (j.notes && typeof j.notes === 'object' && !Array.isArray(j.notes)) {
+        Object.entries(j.notes as Record<string, unknown>).forEach(([k, v]) => {
+          if (isDangerousKey(k)) return;
+          if (typeof v === 'string') notes[k] = v;
+        });
+      }
+      const meta = (j.meta && typeof j.meta === 'object' ? j.meta : {}) as Record<string, unknown>;
+      const answerCount = Object.values(flat).filter(v => v && v !== '').length;
+      setImportedData({
+        client: flat.g1 || (typeof meta.project === 'string' ? meta.project : '') || '',
+        name: flat.g2 || '',
+        answers: flat,
+        notes,
+        pblLines: Array.isArray(j.pbl_lines) ? j.pbl_lines as object[] : [],
+        osDevices: Array.isArray(j.os_devices) ? j.os_devices as object[] : [],
+        mezDetails: Array.isArray(j.mez_details) ? (j.mez_details as unknown[]).filter((m): m is string => typeof m === 'string') : [],
+        etiquetas: Array.isArray(j.etiquetas_custom) ? j.etiquetas_custom as object[] : [],
+        fileName: file.name,
+        answerCount,
+      });
+    } catch (err) {
+      setImportError(err instanceof SyntaxError
+        ? 'Arquivo inválido. Certifique-se de selecionar um JSON exportado pelo Nexus.'
+        : err instanceof Error ? err.message : 'Falha ao ler o arquivo.');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
