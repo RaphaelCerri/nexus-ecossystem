@@ -70,7 +70,7 @@ export function GerarDocumento() {
     setError(null);
     setLastGenerated(null);
     try {
-      const resp = await fetch('/ES_PLACEHOLDER_v6.docx');
+      const resp = await fetch('/ES_PLACEHOLDER_v6.docx', { cache: 'no-store' });
       if (!resp.ok) throw new Error('Template não encontrado. Contate o administrador.');
       const templateBytes = await resp.arrayBuffer();
       const result = await generateDocx(templateBytes, inputJson, getCurrentUser());
