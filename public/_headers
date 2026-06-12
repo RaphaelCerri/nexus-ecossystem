@@ -1,6 +1,11 @@
 # Headers de segurança aplicados pelo Netlify a todas as rotas.
 # Referência: https://docs.netlify.com/routing/headers/
 
+/ES_PLACEHOLDER_v7.docx
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Frame-Options: DENY

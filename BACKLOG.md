@@ -31,7 +31,7 @@
 | F1-04 | Retirar validação numérica dos campos de quantidade — aceitar texto | 🔴 | — | Ex: "a definir", "2 ou 3 dependendo do cliente" devem ser aceitos |
 | F1-05 | IA no kickoff não deve ser pergunta opcional | 🔴 | — | Se o projeto tem IA, deve ser mandatory; revisar gate question |
 | F1-06 | Recirculação e IA no Sorter não devem ser perguntas opcionais | 🟡 | — | Mover de opcional para obrigatório dentro da seção Sorter |
-| F1-07 | Revisar seção Conferência — adicionar gate question "Tem Conferência?" | 🔴 | ❓ | Ver dúvida C1 abaixo |
+| F1-07 | Remover seção Conferência inteira do kickoff | 🔴 | — | Confirmado: conferência não existe nesse tipo de projeto |
 | F1-08 | Dependências entre funcionalidades: se tem IA → sempre tem TV e IVT/etiqueta | 🟡 | — | Lógica de campos dependentes — se X=sim, campos Y e Z tornam-se obrigatórios |
 | F1-09 | PTM/IA: gerar campos de TV da IA ou TV do PTM e quantidade | 🟡 | ❓ | Ver dúvida C2 abaixo |
 | F1-10 | Revisar campos fixos padrão: torná-los invisíveis na UI mas manter no JSON | 🟡 | ❓ | Ver dúvida C3 abaixo |
@@ -40,6 +40,9 @@
 | F1-13 | Conta ADM: easter egg (clicar 10x em local secreto + botão Y para acessar) | 🟢 | — | Acesso admin oculto sem tela de login especial |
 | F1-14 | KPIs linkados e visíveis na seção Administração do Config | 🟡 | — | Cada feature implementada mostra seus KPIs medidos |
 | F1-15 | ADM pode editar os valores de KPI de cada funcionalidade no painel Config | 🟡 | — | Interface para inserir valores reais nas tabelas de KPI |
+| F1-16 | Separar "Nome do Projeto" (codinome) de "Nome do Cliente" como campos distintos | 🔴 | — | Atualmente o nome do projeto = nome do cliente. Criar campo codinome; ambos pre-preenchidos no kickoff |
+| F1-17 | Texto com "definir" (qualquer case) em qualquer campo → tratado como [A DEFINIR] | 🟡 | — | Validação global no kickoff; complementa o tratamento que já existe no docxBuilder |
+| F1-18 | Versionamento de input.json por projeto: accordion no Overview, baixar/excluir/gerar por versão | 🔴 | — | localStorage; visível só para papel `documentacao`; confirmação ao excluir |
 
 ---
 
@@ -98,7 +101,7 @@ Preciso das suas respostas para fechar a triagem desses itens:
 
 | # | Dúvida | Item relacionado |
 |---|---|---|
-| C1 | "CONFERÊNCIA não tem" — quer dizer remover a seção do kickoff inteiro? Ou adicionar uma gate question "Tem Conferência?" para projetos que não têm? | F1-07 |
+| C1 | ~~"CONFERÊNCIA não tem"~~ — **Resolvido:** remover a seção inteira. | F1-07 |
 | C2 | "PTM/IA televisão" — o que é "televisão" nesse contexto? É uma tela/display físico que fica na estação? O campo seria "Quantidade de TVs da IA" e "Quantidade de TVs do PTM"? | F1-09 |
 | C3 | "Campos fixos padrão invisíveis" — quais campos você tem em mente? Ex: campos que sempre têm o mesmo valor e não precisam aparecer no form mas devem ir no JSON? | F1-10 |
 | C4 | Integração no início — é mover a seção de Integração (ERP, APIs) para antes das outras no formulário, ou é criar um campo de integração nas Infos Gerais como contexto inicial? | F1-11 |

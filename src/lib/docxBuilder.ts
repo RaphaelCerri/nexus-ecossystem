@@ -571,6 +571,29 @@ export async function generateDocx(
   docXml = injectBody(docXml, bodyXml);
 
   zip.file('word/document.xml', docXml);
+
+  // Remove the top-right anchored image (rId2) from header6.xml — it sits on every body page's top-right corner
+  const h6file = zip.file('word/header6.xml');
+  if (h6file) {
+    let h6xml = await h6file.async('string');
+    const embedIdx = h6xml.indexOf('r:embed="rId2"');
+    if (embedIdx !== -1) {
+      // Walk backward to find the actual <w:r> or <w:r ...> start (not <w:rPr>, <w:rFonts>, etc.)
+      let runStart = -1;
+      const runTagRe = /<w:r[ >]/g;
+      let m: RegExpExecArray | null;
+      while ((m = runTagRe.exec(h6xml)) !== null) {
+        if (m.index < embedIdx) runStart = m.index;
+        else break;
+      }
+      const runEnd = h6xml.indexOf('</w:r>', embedIdx);
+      if (runStart !== -1 && runEnd !== -1) {
+        h6xml = h6xml.slice(0, runStart) + h6xml.slice(runEnd + 6);
+        zip.file('word/header6.xml', h6xml);
+      }
+    }
+  }
+
   const blob = await zip.generateAsync({
     type: 'blob',
     compression: 'DEFLATE',
