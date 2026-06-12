@@ -246,19 +246,14 @@ export default function App() {
                 NEXUS
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 11, flexShrink: 0 }}>›</Typography>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: page === 'kickoff' && activeProject ? 'text.secondary' : 'text.primary', flexShrink: 0 }}>
-                {PAGE_TITLES[page]}
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: (page === 'kickoff' || page === 'overview') && activeProject ? 'text.secondary' : 'text.primary', flexShrink: 0 }}>
+                {(page === 'kickoff' || page === 'overview') && activeProject ? 'Projeto' : PAGE_TITLES[page]}
               </Typography>
-              {page === 'kickoff' && activeProject && (
+              {(page === 'kickoff' || page === 'overview') && activeProject && (
                 <>
                   <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 11, flexShrink: 0 }}>›</Typography>
                   <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {activeProject.client}
-                    {(activeProject.answers?.g2 || activeProject.code) && (
-                      <Box component="span" sx={{ color: 'text.disabled', fontWeight: 400, ml: '5px', fontSize: 12 }}>
-                        {activeProject.answers?.g2 || activeProject.code}
-                      </Box>
-                    )}
+                    {activeProject.answers?.g_codinome || activeProject.name || activeProject.client}
                   </Typography>
                 </>
               )}

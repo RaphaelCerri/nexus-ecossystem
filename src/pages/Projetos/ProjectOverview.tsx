@@ -31,6 +31,7 @@ import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
 import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import type { NexusProject, Contact, Pendencia, JsonVersion } from '../../lib/projectStore';
 import { loadProject, upsertProject, getProgress, generateId } from '../../lib/projectStore';
 import { generateDocx } from '../../lib/docxBuilder';
@@ -79,7 +80,18 @@ interface ContactDialogState {
   editing: Contact | null;
   titulo: string;
   email: string;
+  phone: string;
 }
+
+function phoneMask(v: string): string {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+function phoneDigits(v: string): string { return v.replace(/\D/g, ''); }
+function phoneValid(v: string): boolean { const d = phoneDigits(v); return d.length === 10 || d.length === 11; }
 
 function getCurrentUser(): UserInfo | undefined {
   try {
@@ -112,7 +124,7 @@ function copyText(text: string) {
 export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: Props) {
   const [project, setProject] = useState<NexusProject | null>(null);
   const [contactDialog, setContactDialog] = useState<ContactDialogState>({
-    open: false, editing: null, titulo: '', email: '',
+    open: false, editing: null, titulo: '', email: '', phone: '',
   });
   const [deleteContact, setDeleteContact] = useState<Contact | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -183,19 +195,22 @@ export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: 
     onUpdate();
   };
 
-  const openAddContact = () => setContactDialog({ open: true, editing: null, titulo: '', email: '' });
-  const openEditContact = (c: Contact) => setContactDialog({ open: true, editing: c, titulo: c.titulo, email: c.email });
-  const closeContactDialog = () => setContactDialog({ open: false, editing: null, titulo: '', email: '' });
+  const openAddContact = () => setContactDialog({ open: true, editing: null, titulo: '', email: '', phone: '' });
+  const openEditContact = (c: Contact) => setContactDialog({ open: true, editing: c, titulo: c.titulo, email: c.email, phone: phoneMask(c.phone ?? '') });
+  const closeContactDialog = () => setContactDialog({ open: false, editing: null, titulo: '', email: '', phone: '' });
 
   const saveContact = () => {
-    const { titulo, email, editing } = contactDialog;
+    const { titulo, email, phone, editing } = contactDialog;
     if (!titulo.trim() && !email.trim()) return;
+    if (phone && !phoneValid(phone)) return;
+    const rawPhone = phoneDigits(phone);
     const current = project.contacts ?? [];
     let updated: Contact[];
+    const fields = { titulo: titulo.trim(), email: email.trim(), phone: rawPhone || undefined };
     if (editing) {
-      updated = current.map(c => c.id === editing.id ? { ...c, titulo: titulo.trim(), email: email.trim() } : c);
+      updated = current.map(c => c.id === editing.id ? { ...c, ...fields } : c);
     } else {
-      updated = [...current, { id: generateId(), titulo: titulo.trim(), email: email.trim() }];
+      updated = [...current, { id: generateId(), ...fields }];
     }
     saveProject({ ...project, contacts: updated });
     closeContactDialog();
@@ -305,53 +320,44 @@ export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: 
     <Box className="page-enter" sx={{ p: 3, pb: 6, flex: 1 }}>
 
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25 }}>
           <Button
             startIcon={<ArrowBackRoundedIcon />}
             onClick={onBack}
             color="inherit"
             size="small"
-            sx={{ color: 'text.disabled', mt: '2px', flexShrink: 0 }}
+            sx={{ color: 'text.disabled' }}
           >
             Projetos
           </Button>
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-              <Typography sx={{ fontSize: 22, fontWeight: 800, color: 'text.primary', letterSpacing: '-.4px' }}>
-                {project.client}
-              </Typography>
-              <Chip
-                label={displayCode}
-                size="small"
-                sx={{ fontSize: 10, height: 18, fontFamily: 'monospace', fontWeight: 700, bgcolor: '#383838', color: 'text.secondary', border: 'none' }}
-              />
-              {project.answers?.g_codinome && (
-                <Chip
-                  label={project.answers.g_codinome}
-                  size="small"
-                  sx={{ fontSize: 10, height: 18, fontWeight: 600, bgcolor: 'rgba(255,197,0,0.1)', color: 'primary.main', border: '1px solid rgba(255,197,0,0.3)' }}
-                />
-              )}
-            </Box>
-            {project.name && project.name !== project.client && (
-              <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{project.name}</Typography>
-            )}
-            <Typography sx={{ fontSize: 11, color: 'text.disabled', mt: '3px' }}>
-              Atualizado em {date}
-            </Typography>
-          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            startIcon={<AssignmentTurnedInRoundedIcon />}
+            onClick={() => onOpenKickoff(project.id)}
+            sx={{ fontWeight: 700, flexShrink: 0 }}
+          >
+            Editar Kickoff
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          startIcon={<AssignmentTurnedInRoundedIcon />}
-          onClick={() => onOpenKickoff(project.id)}
-          sx={{ fontWeight: 700, flexShrink: 0 }}
-        >
-          Editar Kickoff
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.25 }}>
+          <Typography sx={{ fontSize: 22, fontWeight: 800, color: 'text.primary', letterSpacing: '-.4px' }}>
+            {project.answers?.g_codinome || project.name || project.client}
+          </Typography>
+          <Chip
+            label={displayCode}
+            size="small"
+            sx={{ fontSize: 10, height: 18, fontFamily: 'monospace', fontWeight: 700, bgcolor: '#383838', color: 'text.secondary', border: 'none' }}
+          />
+        </Box>
+        {project.client && project.client !== (project.answers?.g_codinome || project.name) && (
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: '2px' }}>{project.client}</Typography>
+        )}
+        <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
+          Atualizado em {date}
+        </Typography>
       </Box>
 
       {/* Progress + stats row */}
@@ -441,7 +447,7 @@ export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: 
                   transition: 'color .2s',
                 }}
               >
-                {copiedAll ? 'Copiado!' : 'Copiar todos'}
+                {copiedAll ? 'Copiado!' : 'Copiar todos E-mails'}
               </Button>
             </Tooltip>
           )}
@@ -483,8 +489,27 @@ export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: 
               <Typography sx={{ fontSize: 11, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {c.email || '—'}
               </Typography>
+              {c.phone && (
+                <Typography sx={{ fontSize: 11, color: 'text.disabled', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {phoneMask(c.phone)}
+                </Typography>
+              )}
             </Box>
             <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+              {c.phone && (
+                <Tooltip title="Abrir no WhatsApp">
+                  <IconButton
+                    size="small"
+                    component="a"
+                    href={`https://wa.me/55${phoneDigits(c.phone)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ color: 'text.disabled', '&:hover': { color: '#25d366' } }}
+                  >
+                    <WhatsAppIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
               {c.email && (
                 <Tooltip title={copiedId === c.id ? 'Copiado!' : 'Copiar e-mail'}>
                   <IconButton
@@ -802,13 +827,22 @@ export function ProjectOverview({ projectId, onOpenKickoff, onBack, onUpdate }: 
               onChange={e => setContactDialog(d => ({ ...d, email: e.target.value }))}
               placeholder="Ex: joao@empresa.com"
               type="email"
+            />
+            <TextField
+              label="Telefone / WhatsApp"
+              fullWidth size="small"
+              value={contactDialog.phone}
+              onChange={e => setContactDialog(d => ({ ...d, phone: phoneMask(e.target.value) }))}
+              placeholder="(DD) XXXXX-XXXX"
+              error={contactDialog.phone.length > 0 && !phoneValid(contactDialog.phone)}
+              helperText={contactDialog.phone.length > 0 && !phoneValid(contactDialog.phone) ? 'Número inválido — informe DDD + número (10 ou 11 dígitos)' : ''}
               onKeyDown={e => { if (e.key === 'Enter') saveContact(); }}
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeContactDialog} color="inherit" size="small">Cancelar</Button>
-          <Button onClick={saveContact} variant="contained" color="primary" size="small" disabled={!contactDialog.titulo.trim() && !contactDialog.email.trim()}>
+          <Button onClick={saveContact} variant="contained" color="primary" size="small" disabled={(!contactDialog.titulo.trim() && !contactDialog.email.trim()) || (contactDialog.phone.length > 0 && !phoneValid(contactDialog.phone))}>
             {contactDialog.editing ? 'Salvar' : 'Adicionar'}
           </Button>
         </DialogActions>

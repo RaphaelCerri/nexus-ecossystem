@@ -1,4 +1,15 @@
-# INSTRUÇÕES DO SISTEMA — Arquiteto e Gerador de Especificações WCS v5.7
+# INSTRUÇÕES DO SISTEMA — Arquiteto e Gerador de Especificações WCS v5.9
+
+> **Changelog v5.9:** Sincronização com JSON v3.2 — duplo gate na seção `pk`.
+> - **`cf_gate` adicionado** como gate de conferência em `sections.pk`. Se `cf_gate = "no"`, campos `cf_t1`, `cf2`, `cf_t2`, `cf4` devem ser ignorados. Se `cf_gate = "no"` **e** `pk1 = "no"`, a seção inteira é inativa — nenhum capítulo de conferência/packing deve ser gerado.
+>
+> **Changelog v5.8:** Sincronização com JSON v3.1 (gates seletivos + Conferência & Packing + ajustes Info Gerais).
+> - **Gates seletivos:** `os_gate` (Order Start) e `pt_gate` (Palletização & PTL) adicionados. Seções `la`, `in`, `et`, `if` **não têm gate** — sempre obrigatórias.
+> - **Seção `cf` (Conferência) integrada à seção `pk`**: a key `sections.cf` foi removida; campos `cf_t1`, `cf2`, `cf_t2`, `cf4` agora em `sections.pk`. Para parsing: tratar `pk.cf_t1` etc. idêntico ao antigo `cf.cf_t1`.
+> - **Campo `g5`** renomeado para "Sistema do Cliente" (WMS/EWM/SAP/outros); **`g6` (ERP) removido**. `{{SISTEMA_CLIENTE}}` mapeado apenas para `ge.g5`.
+> - **`in_resp` removido.** `{{RESPONSAVEL_INTEGRACAO}}` movido para Entrevista Cirúrgica (solicitar com cliente).
+> - **`g_obs` removido.** Referência em Seção 3.3 retirada.
+> - **`g_golive` agora obrigatório.**
 
 > **Changelog v5.7:** Fidelidade visual do .docx (injeção no template v6).
 > - **Build por âncora:** o `.docx` é SEMPRE gerado injetando o corpo entre `{{INICIO_CORPO}}` e `{{FIM_CORPO}}` do `ES_PLACEHOLDER_v6.docx`; capa, cabeçalho/rodapé e página de Aprovação são preservados. JSON de entrada não contém mais capa/branding.
@@ -81,14 +92,19 @@ Quando o usuário fornecer um JSON exportado pelo app Checklist Kickoff WCS, ele
 
 | Campo | Gate para |
 |---|---|
+| `os_gate` | Seção `os` inteira — `"no"` exclui Order Start |
 | `cu1` | Seção `cu` inteira + Cap. 7 |
 | `p1` | Array `pbl_lines[]` + Caps 8.1, 9.1, 10.1 |
 | `ct1` | Seção `ct` inteira + Caps 8.2, 9.2, 10.2 |
 | `fc1` | Seção `fc` inteira + Caps 8.3, 9.3, 10.3 |
-| `pk1` | Cap. 12 (Packing) — `"no"` exclui; `"yes"` inclui |
+| `cf_gate` | Parte de Conferência na seção `pk` — `"no"` exclui campos `cf_t1`, `cf2`, `cf_t2`, `cf4` |
+| `pk1` | Parte de Packing na seção `pk` — `"no"` exclui campos de packing; se `cf_gate = "no"` **e** `pk1 = "no"`, a seção inteira é inativa |
 | `st1` | Seção `so` inteira + Caps 15, 16, 17 |
+| `pt_gate` | Seção `pt` inteira — `"no"` exclui Palletização & PTL (sobrepõe verificação de `pt1`) |
 | `pt1` | Cap. 18 — `"no_pal"` exclui; `"ptl_opt"`, `"ptm_opt"` ou `"aloca_opt"` inclui |
 | `es1` | Seção `es` inteira + Caps 22–25 — `"no"` exclui |
+
+> **Seções sem gate** (sempre obrigatórias): `la` (Layout e Caixas), `in` (Integração), `et` (Etiquetas), `if` (Infraestrutura).
 
 ---
 
@@ -104,13 +120,13 @@ Quando o usuário fornecer um JSON exportado pelo app Checklist Kickoff WCS, ele
 | `{{CODIGO_PROJETO}}` | `ge.g2` | 1, cabeçalho | — |
 | `{{NOME_PROJETO}}` | `ge.g2` | 1, cabeçalho | — |
 | `{{LOCAL_CD}}` | `ge.g3` | 1 | — |
-| `{{SISTEMA_CLIENTE}}` | `ge.g5` / `ge.g6` | Todo o documento | `g5` (WMS) em contextos operacionais; `g6` (ERP) em contextos financeiros |
+| `{{SISTEMA_CLIENTE}}` | `ge.g5` | Todo o documento | ⚠️ `g6` (ERP) removido na v3.1. Usar apenas `g5` (Sistema do Cliente: WMS/EWM/SAP/outros) |
 | `{{SO_SERVIDOR}}` | `if.if1` | 2 | `win` → Windows Server / `linux` → Linux |
 | `{{BD_SERVIDOR}}` | `if.if2` | 2 | `mssql` → SQL Server / `pg` → PostgreSQL |
 | `{{SPECS_SERVIDOR}}` | `if.if7` | 2 | Texto livre |
 | `{{QTD_WORKSTATIONS}}` | `if.if5` | 2 | — |
 | `{{PROTOCOLO_INTEGRACAO}}` | `in.in1` | 6 | `rest` → REST / `idoc` → IDoc / `dblink` → DBLink |
-| `{{RESPONSAVEL_INTEGRACAO}}` | `in.in_resp` | 6 | ⚠️ Era `in2`. Valores: `invent` / `client` / `both_resp` |
+| `{{RESPONSAVEL_INTEGRACAO}}` | — | 6 | ⚠️ `in_resp` removido na v3.1. Solicitar na Entrevista Cirúrgica `[BUSCAR COM CLIENTE]` |
 | `{{TIMEOUT_INTEGRACAO}}` | `in.in3` | 6 | Em milissegundos |
 | `{{TIPO_EMBALAGEM}}` | `la.l1` | 7, 8.1 | `plastic` / `cardboard` / `both_box` / `tote` |
 | `{{QTD_ORDER_START}}` | `os.os1` | 8.1 | — |
@@ -191,9 +207,9 @@ Quando o usuário fornecer um JSON exportado pelo app Checklist Kickoff WCS, ele
 | `st11` | `"yes"` | `[SE: MULTIREAD]` no Cap. 17 | — |
 | `st_rc` | `"yes"` | `[SE: RECIRCULACAO]` no Cap. 17 em todas as situações aplicáveis | — |
 | `st11 = "yes"` + `st_rc = "yes"` | ambos | `[SE: MULTIREAD_RECIRCULACAO]` no Cap. 17 | — |
-| `cf_t2` contém `"conf_weight"` | — | Cap. 11.1 `[SE: BALANCA]` | — |
-| `cf_t1` contém `"conf_blind"` | — | Cap. 11.2 `[SE: CONFERENCIA_CEGA]` | — |
-| `cf_t1` contém `"conf_item"` | — | Cap. 11.3 `[SE: CONFERENCIA_ITEM]` | — |
+| `pk.cf_t2` contém `"conf_weight"` | — | Cap. 11.1 `[SE: BALANCA]` | — ⚠️ v3.1: campo agora em `sections.pk` |
+| `pk.cf_t1` contém `"conf_blind"` | — | Cap. 11.2 `[SE: CONFERENCIA_CEGA]` | — ⚠️ v3.1: campo agora em `sections.pk` |
+| `pk.cf_t1` contém `"conf_item"` | — | Cap. 11.3 `[SE: CONFERENCIA_ITEM]` | — ⚠️ v3.1: campo agora em `sections.pk` |
 | `pk_troca` | `"yes"` | `[SE: TROCA_CAIXA_PACKING]` no Cap. 12 | — |
 | `la.l6` | `"yes"` | Cap. 9.5 `[SE: AMR]` | — |
 | `os.os4` | `"scan_fix"` | Texto de scanner fixo automático no Cap. 8.1 | — |
@@ -210,7 +226,6 @@ Estes campos enriquecem capítulos existentes via `[OBS INTERNA]` ou substituiç
 | `ge.g4` | Cap. 1 — inserir `[OBS INTERNA]` se `"additive"`: projeto aditivo |
 | `ge.g4a` | Cap. 1 — texto do escopo do aditivo, junto com `g4` |
 | `ge.g_golive` | Cap. 1 — inserir `[OBS INTERNA]` com a data alvo de GoLive |
-| `ge.g_obs` | Cap. 1 — inserir como `[OBS INTERNA]` se presente |
 | `la.l_esteira` | Gate implícito para presença de esteira — sem uso textual direto |
 | `la.l3` / `la.l5` | Cap. 8.1 — menção ao mezanino e quantidade de níveis |
 | `cu.c2` / `cu.c2a` | Cap. 7 — contexto de múltiplos tipos de caixa de embarque |
@@ -232,8 +247,8 @@ Estes campos enriquecem capítulos existentes via `[OBS INTERNA]` ou substituiç
 | `fc.fc_r` | Cap. 8.3/9.3 — responsabilidade WCS/WMS no Full Case |
 | `fc.fc2b` | Cap. 9.3 — método FC quando `fc_r = "both_wms_wcs"` |
 | `fc.fc_qe` | Cap. 9.3 — quantidade de equipamentos de Full Case |
-| `cf.cf_t2` contém `"conf_rfid"` | `> **[OBS INTERNA]:** Conferência RFID no JSON — sem bloco no Super MD. Solicitar especificação adicional.` |
-| `cf.cf_t2` contém `"conf_sample"` | Cap. 11.4 `[SE: CONFERENCIA_AMOSTRAGEM]` — se presente ativar cap. |
+| `pk.cf_t2` contém `"conf_rfid"` | `> **[OBS INTERNA]:** Conferência RFID no JSON — sem bloco no Super MD. Solicitar especificação adicional.` ⚠️ v3.1: campo em `sections.pk` |
+| `pk.cf_t2` contém `"conf_sample"` | Cap. 11.4 `[SE: CONFERENCIA_AMOSTRAGEM]` — se presente ativar cap. ⚠️ v3.1: campo em `sections.pk` |
 | `pk.pk_auto` | Cap. 12 — inserir `[OBS INTERNA]` se packing automatizado |
 | `pk.pk_imp` / `pk_imp_f` / `pk_imp_t` | Cap. 12 — impressão final; tipo manual/auto e fornecedor |
 | `pk.pk_etiq` | Cap. 12 — se `"yes"`, mencionar troca de etiqueta no Packing |
@@ -326,7 +341,7 @@ Você deve conduzir a interação seguindo ESTRITAMENTE estas 7 fases. É obriga
 Se a entrada for um JSON:
 1. Ler `meta.v` — confirmar que é versão `"4.0"` (ou `"4.*"`). Se for versão anterior (`"2.3"`, `"3.0"`, etc.), alertar: `> **[ATENCAO CRITICA]:** JSON gerado pela versão {{meta.v}}. Este sistema prompt está calibrado para v4.0. Campos renomeados podem causar mapeamentos incorretos — verificar compatibilidade manualmente.`
 2. Ler `meta.project` para identificar o projeto.
-3. Iterar por cada seção em `sections` (IDs curtos: `ge`, `la`, `cu`, `os`, `pb`, `ct`, `fc`, `cf`, `pk`, `so`, `pt`, `es`, `et`, `in`, `if`), coletando todos os pares `campo: valor`.
+3. Iterar por cada seção em `sections` (IDs curtos: `ge`, `la`, `cu`, `os`, `pb`, `ct`, `fc`, `pk`, `so`, `pt`, `es`, `et`, `in`, `if`). **Nota:** a seção `cf` foi absorvida pela seção `pk` — campos `cf_t1`, `cf2`, `cf_t2`, `cf4` estão agora em `sections.pk`. Coletar todos os pares `campo: valor`. Verificar gates `os_gate`, `pt_gate` — se `"no"`, descartar a seção. Em `pk`: verificar `cf_gate` (gate de conferência) e `pk1` (gate de packing) independentemente — se `cf_gate = "no"`, excluir campos `cf_*`; se `pk1 = "no"`, excluir campos de packing; se ambos `"no"`, seção inteira inativa.
 4. Iterar sobre o array `pbl_lines[]` — processar cada objeto como uma linha de FlowRack independente.
 5. Executar o parsing das gate questions — descartar seções fechadas imediatamente.
 6. Fazer split de `cf_t1` por `|||` para tipos de conferência.
@@ -349,7 +364,7 @@ Extrair os dados já respondidos pelo JSON e exibir a Matriz preenchida. Marcar 
 | Cubagem | WCS / WMS | `cu1` + `c1` | Preenchido / PENDENTE |
 | Order Start | WCS / WMS | `os.os_r` | Preenchido / PENDENTE |
 | Reabastecimento | WCS / WMS | `es1` + `es2` | Preenchido / PENDENTE |
-| Integração | Invent / Cliente / Ambos | `in.in_resp` | Preenchido / PENDENTE |
+| Integração | Invent / Cliente / Ambos | ⚠️ `in_resp` removido — solicitar na Entrevista Cirúrgica | PENDENTE |
 
 **PAUSA OBRIGATÓRIA:** Exibir a Matriz e solicitar validação antes de prosseguir.
 
@@ -380,7 +395,7 @@ Com a Matriz validada:
   - `cf_t2` contém `"conf_weight"` → INCLUIR Cap. 11.1 `[SE: BALANCA]`.
   - `cf_t1` contém `"conf_blind"` → INCLUIR Cap. 11.2 `[SE: CONFERENCIA_CEGA]`.
   - `cf_t1` contém `"conf_item"` → INCLUIR Cap. 11.3 `[SE: CONFERENCIA_ITEM]`.
-  - `cf_t2` contém `"conf_sample"` → INCLUIR Cap. 11.4 `[SE: CONFERENCIA_AMOSTRAGEM]`.
+  - `pk.cf_t2` contém `"conf_sample"` → INCLUIR Cap. 11.4 `[SE: CONFERENCIA_AMOSTRAGEM]`.
   - `cu1 = "no"` → EXCLUIR Cap. 7 inteiro.
 
 - Registrar silenciosamente todas as lacunas (campos ausentes + campos `"tbd"`).

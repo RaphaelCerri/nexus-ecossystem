@@ -20,6 +20,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
@@ -44,7 +45,7 @@ var O = {
   yes:'Sim',no:'Não',tbd:'A definir',
   new_proj:'Novo',additive:'Aditivo',
   wcs:'WCS',wms_only:'WMS',both_wms_wcs:'Ambos',
-  plastic:'Plástica',cardboard:'Papelão',both_box:'Ambos',tote:'Tote',misto_box:'Misto',
+  plastic:'Plástica',cardboard:'Papelão',both_box:'Ambos',tote:'Tote',misto_box:'Misto',tote_plastic:'Tote/Plástica',fardo:'Fardo',
   desktop:'Desktop',tablet:'Tablet',collector:'Coletor',
   scan_fix:'Fixo',scan_man:'Manual',
   bip_yes:'Obrigatória',bip_no:'Não',bip_param:'Parametrizável',
@@ -80,48 +81,46 @@ function saveCustomWms(val) { if(!val||val.length<2)return; try { var c=JSON.par
 
 var SEC = [
   {id:'ge',n:'1',t:'Info Gerais',dept:'gest',q:[
-    Q('g1','Cliente','text',1),Q('g2','Projeto/código','text',1),Q('g_codinome','Codinome do Projeto','text',0,0,0,0,'Ex: Projeto Colibri'),Q('g3','Local do CD','text',1),
+    Q('g1','Cliente','text',1),Q('g2','Código do Projeto','text',1),Q('g_codinome','Codinome do Projeto','text',1,0,0,0,'Ex: Projeto Colibri'),Q('g3','Local do CD','text',1),
     Q('g4','Novo ou aditivo?','select',1,['new_proj','additive','tbd']),
     Q('g4a','Escopo do aditivo','textarea',0,0,0,'g4:additive','Descreva o escopo'),
-    Q('g5','WMS','wms',1),
-    Q('g6','ERP','text',0,0,0,0,'Ex: SAP'),
-    Q('g_golive','GoLive alvo','text',0,0,0,0,'Ex: 24/06/2026'),
-    Q('g_layout_ref','Layout semelhante ao','text',0,0,0,0,'Ex: CD Kalunga 2023'),
-    Q('g_obs','Observações gerais','textarea',0),
+    Q('g5','Sistema do Cliente','wms',1),
+    Q('g_golive','GoLive alvo','text',1,0,0,0,'Ex: 24/06/2026'),
+    Q('g_layout_ref','Layout Semelhante','text',0,0,0,0,'Ex: CD Kalunga 2023'),
   ]},
   {id:'la',n:'2',t:'Layout e Caixas',dept:'gest',q:[
-    Q('l1','Tipo caixa/tote','select',1,['plastic','cardboard','both_box','tote','misto_box','tbd']),
-    Q('l_esteira','Tem esteira/conveyor?','select',0,YN),
+    Q('c2','Múltiplos tipos de caixa?','select',1,YN),
+    Q('l1','Tipo Caixa','select',1,['tote_plastic','cardboard','fardo','misto_box','tbd'],0,'c2:no'),
+    Q('l1_m','Tipo Caixa','multi',1,['tote_plastic','cardboard','fardo','misto_box','tbd'],0,'c2:yes'),
     Q('l3','Tem mezanino?','select',1,YN),
     Q('l5','Quantos niveis?','text',1,0,0,'l3:yes'),
     Q('l6','Tem AMR?','select',0,YN),
   ]},
   {id:'cu',n:'3',t:'Cubagem',dept:'gest',q:[
-    Q('cu1','Tem cubagem?','select',1,YN,1),
+    Q('cu1','Tem Cubagem?','select',1,YN,1),
     Q('c1','Quem faz cubagem?','select',1,['wcs','wms_only','tbd']),
-    Q('c2','Multiplos tipos de caixa?','select',1,YN),
-    Q('c2a','Quais tipos?','text',0,0,0,'c2:yes','Ex: Papelao P, M, G'),
   ]},
-  {id:'in',n:'4',t:'Integracao',dept:'infra',q:[
-    Q('in1','Tipo integracao','select',1,['rest','idoc','dblink','excel','json_api','json_pasta','outro']),
-    Q('in_resp','Responsável pela integração','select',0,FN),
+  {id:'in',n:'4',t:'Integração',dept:'infra',q:[
+    Q('in1','Tipo integracao','select',1,['rest','idoc','dblink','excel','json_api','json_pasta','outro','tbd']),
+    Q('in1b','Tipo integracao 2','select',0,['rest','idoc','dblink','excel','json_api','json_pasta','outro','tbd']),
     Q('in_endpoint','Endpoint/URL','text',0,0,0,0,'Ex: https://api.cliente.com/wcs'),
     Q('in3','Timeout (ms)','text',0),
   ]},
   {id:'os',n:'5',t:'Order Start',dept:'gest',q:[
+    Q('os_gate','Tem Order Start?','select',1,YN,1),
     Q('os_r','Responsabilidade WCS/WMS','select',1,RS),
     Q('os1','Quantos Order Starts?','text',1),
     Q('os_imp_etq','Imprime etiqueta no OS?','select',0,YN),
     Q('os4','Vinculacao de caixa','select',1,['scan_fix','scan_man','tbd']),
     Q('os5','OS por nível?','select',0,YN),
   ]},
-  {id:'pb',n:'5a',t:'PBL / FlowRack',dept:'gest',sc:1,q:[
-    Q('p1','Tem PBL?','select',1,YN,1),
+  {id:'pb',n:'6',t:'PBL / FlowRack',dept:'gest',sc:1,q:[
+    Q('p1','Tem PBL / FlowRack?','select',1,YN,1),
     Q('pk_tp','Throughput linha (cx/h)','text',0,0,0,0,'Ex: 3000'),
     Q('pk_es','WCS gerencia estoque (picking)?','select',0,['wcs','wms_only','tbd']),
   ]},
-  {id:'ct',n:'5b',t:'Picking Cart',dept:'gest',sc:1,q:[
-    Q('ct1','Tem Cart?','select',1,YN,1),
+  {id:'ct',n:'7',t:'Picking Cart',dept:'gest',sc:1,q:[
+    Q('ct1','Tem Picking Cart?','select',1,YN,1),
     Q('ct_r','Responsabilidade WCS/WMS','select',1,RS),
     Q('ct_qc','Qtd carrinhos','text',1),
     Q('ct2','Posicoes/carrinho','text',1),
@@ -131,7 +130,7 @@ var SEC = [
     Q('s1c','Corte exige supervisor?','select',1,YN),
     Q('s2c','Pede Caixa?','select',1,YN),
   ]},
-  {id:'fc',n:'5c',t:'Full Case',dept:'gest',sc:1,q:[
+  {id:'fc',n:'8',t:'Full Case',dept:'gest',sc:1,q:[
     Q('fc1','Tem Full Case?','select',1,YN,1),
     Q('fc_r','Responsabilidade WCS/WMS','select',1,['wcs','wms_only','both_wms_wcs','tbd']),
     Q('fc2','Metodo','select',1,['fc_coletor','fc_etiq_led','fc_etiq','tbd'],0,'fc_r:wcs'),
@@ -141,8 +140,13 @@ var SEC = [
     Q('fc_re','Quem fornece equip. Full Case?','select',1,FN),
     Q('fc_qe','Quantos equip.?','text',0),
   ]},
-  {id:'pk',n:'8',t:'Packing',dept:'gest',q:[
-    Q('pk1','Tem Packing?','select',1,['yes','no']),
+  {id:'pk',n:'9',t:'Conferência & Packing',dept:'gest',q:[
+    Q('cf_gate','Tem Conferência?','select',1,['yes','no','tbd']),
+    Q('cf_t1','Tipo de conferência','multi',1,['conf_blind','conf_item','conf_multi','conf_ean','tbd'],0,'cf_gate:yes'),
+    Q('cf2','Estações de conferência','text',1,0,0,'cf_gate:yes'),
+    Q('cf_t2','Motivos de desvio p/ conferência','multi',1,['conf_weight','conf_rfid','conf_sample','conf_client','conf_product','conf_100','tbd'],0,'cf_gate:yes'),
+    Q('cf4','Tolerância da balança','text',0,0,0,'cf_gate:yes'),
+    Q('pk1','Tem Packing?','select',1,['yes','no','tbd']),
     Q('pk_auto','Packing automatico?','select',0,YN,0,'pk1:yes'),
     Q('pk_imp','Tem impressora no packing?','select',0,YN,0,'pk1:yes'),
     Q('pk_imp_f','Quem fornece a impressora?','select',0,FN,0,'pk_imp:yes'),
@@ -150,7 +154,7 @@ var SEC = [
     Q('pk_troca','Troca de caixa?','select',0,YN,0,'pk1:yes'),
     Q('pk_etiq','Troca etiqueta?','select',0,YN,0,'pk1:yes'),
   ]},
-  {id:'so',n:'9',t:'Sorter',dept:'gest',q:[
+  {id:'so',n:'10',t:'Sorter',dept:'gest',q:[
     Q('st1','Tem Sorter?','select',1,YN,1),
     Q('st2','Rampas saida','text',1),
     Q('st3','Rejeito','text',1),
@@ -158,29 +162,30 @@ var SEC = [
     Q('st4','SLA - Portal a Primeiro HPD','text',1),
     Q('st5','Inducao','text',0),
     Q('st6','Portal leitura: faces?','text',0),
-    Q('st_criterio','Critério desvio rampa','select',0,['regiao','transp','filial','outro']),
+    Q('st_criterio','Critério desvio rampa','select',0,['regiao','transp','filial','outro','tbd']),
     Q('st7','Cross-check?','select',0,YN),
-    Q('st10','Sinaleiro nas Rampas?','select',0,['yes','no']),
+    Q('st10','Sinaleiro nas Rampas?','select',0,['yes','no','tbd']),
     Q('st11','IA?','select',1,YN),
-    Q('st11_tvs','Qtd TVs câmera IA','text',1,0,0,'st11:yes','Ex: 2'),
+    Q('st11_tvs','Qtd TVs I.A','text',1,0,0,'st11:yes','Ex: 2'),
     Q('st_rc','Recirculacao?','select',1,YN),
     Q('st_ag','Agrupador da rampa','text',0),
   ]},
-  {id:'pt',n:'10',t:'Palletizacao & PTL',dept:'gest',q:[
-    Q('pt1','Tipo palletizacao','select',1,['no_pal','tbd','ptl_opt','ptm_opt','aloca_opt']),
+  {id:'pt',n:'11',t:'Palletização & PTL',dept:'gest',q:[
+    Q('pt_gate','Tem Palletização & PTL?','select',1,YN,1),
+    Q('pt1','Tipo palletizacao','select',1,['no_pal','ptl_opt','ptm_opt','aloca_opt','tbd']),
     Q('pt3','Posicoes','text',1),
     Q('pt_frag','Matriz de fragilidade?','select',0,YN),
     Q('pt_ag','Agrupador Palletizacao','text',0),
     Q('pt8','Itens perigosos?','select',0,YN),
     Q('pt9','Romaneio?','select',0,YN),
     Q('pt_tem_ptl','Tem displays PTL?','select',0,YN),
-    Q('pt_tipo_disp','Tipo display','select',0,['ptl_hw','tablet_ptl','outro'],0,'pt_tem_ptl:yes'),
+    Q('pt_tipo_disp','Tipo display','select',0,['ptl_hw','tablet_ptl','outro','tbd'],0,'pt_tem_ptl:yes'),
     Q('pt_tvs_ptl','Qtd TVs PTL','text',0,0,0,'pt_tem_ptl:yes'),
     Q('pt_ptm','Tem PTM (Put to Monitor)?','select',0,YN),
     Q('pt_ptm_qtd','Qtd TVs PTM','text',0,0,0,'pt_ptm:yes'),
   ]},
-  {id:'es',n:'11',t:'Gestao Estoque',dept:'gest',q:[
-    Q('es1','WCS gerencia estoque?','select',1,YN,1),
+  {id:'es',n:'12',t:'Gestão de Estoque',dept:'gest',q:[
+    Q('es1','Tem Gestão de Estoque?','select',1,YN,1),
     Q('es2','Reabastecimento auto?','select',1,YN),
     Q('es3','Reab. pelo Sorter?','select',0,YN),
     Q('es4','Inventario?','select',0,YN),
@@ -190,13 +195,13 @@ var SEC = [
     Q('es8','Range dias','text',0,0,0,'es7:yes'),
     Q('es10','Double check?','select',0,YN),
   ]},
-  {id:'et',n:'12',t:'Etiquetas',dept:'infra',q:[
+  {id:'et',n:'13',t:'Etiquetas',dept:'infra',q:[
     Q('et_r','Responsabilidade etiquetas','select',1,['wcs','wms_only','tbd']),
     Q('et1','Total impressoras','text',1),
     Q('et_dist','Distribuição','text',0),
   ]},
   {id:'if',n:'14',t:'Infraestrutura',dept:'infra',q:[
-    Q('if_titul','Titular da infra','select',1,['srv_invent','srv_client','srv_shared']),
+    Q('if_titul','Titular da infra','select',1,['srv_invent','srv_client','srv_shared','tbd']),
     Q('if_ambiente','Tipo de ambiente','select',1,['onprem','saas','cloud','hybrid','tbd']),
     Q('if_s','Servidor: unico ou separado?','select',1,['single_srv','sep_srv','tbd']),
     Q('if_ambientes','Tem PRD + HML?','select',0,YN),
@@ -215,20 +220,20 @@ var SEC = [
   ]},
 ];
 
-var GATE_PBL = Q('p1','Tem PBL?','select',1,YN,1);
+var GATE_PBL = Q('p1','Tem PBL / FlowRack?','select',1,YN,1);
 var PBL_Q = [Q('p_r','Resp WCS/WMS','select',1,RS),Q('p_m','LED ou cod. barras?','select',1,['led_mode','bar_mode','tbd']),Q('p_led','Tipo LED','select',1,['led3','led10','tbd'],0,'p_m:led_mode'),Q('p_g','Giro','select',1,['both_turn','high_turn','med_turn','low_turn','tbd']),Q('p2','Estacoes','text',1),Q('p_pdv','Tem PDV?','select',1,YN),Q('p_pdv_f','Quem fornece o PDV?','select',1,FN,0,'p_pdv:yes'),Q('p_sct','Tipo scanner','select',1,['sc_hand','sc_fixed','tbd']),Q('p_sc_f','Quem fornece o scanner?','select',1,FN),Q('p3','Bipagem EAN?','select',1,['bip_yes','bip_no','bip_param','tbd'],0,'p_sct:sc_hand'),Q('p3b','Bipagem EAN?','select',1,['bip_yes','bip_no','bip_param','tbd'],0,'p_sct:sc_fixed'),Q('p_pf','Posicoes frente','text',1),Q('p10','Picking costas?','select',1,YN),Q('p_pc','Posicoes costas','text',1,0,0,'p10:yes'),Q('p10l','Costas tem LED?','select',1,YN,0,'p10:yes'),Q('p10lt','Tipo LED costas','select',1,['led3','led10','tbd'],0,'p10l:yes'),Q('p_re','Quem fornece equip PBL?','select',1,FN),Q('s1p','Corte exige supervisor?','select',1,YN),Q('s2p','Pede Caixa?','select',1,YN),Q('s3p','Motivo corte obrigatorio?','select',0,YN)];
 
 var PHASES = [
   {id:'ph0',label:'Dados do Projeto',       ids:['ge','la','cu','in'], color:'#ffc500'},
   {id:'ph1',label:'Order Start & Picking',  ids:['os','pb','ct','fc'], color:'#34d399'},
-  {id:'ph2',label:'Processo de Saida',      ids:['pk','so','pt'], color:'#fb923c'},
-  {id:'ph3',label:'Gestao e Infraestrutura',ids:['es','et','if'], color:'#38bdf8'},
+  {id:'ph2',label:'Processo de Saída',       ids:['pk','so','pt'], color:'#fb923c'},
+  {id:'ph3',label:'Gestão e Infraestrutura', ids:['es','et','if'], color:'#38bdf8'},
 ];
 function getSecColor(secId){var ph=PHASES.find(function(p){return p.ids.indexOf(secId)>=0;});return ph?ph.color:'#ffc500';}
 
-function gv(s,a) { var gQ=s.q.find(function(q){return q.g;}); if(gQ&&a[gQ.id]==='no')return [gQ]; return s.q.filter(function(q) { if(!q.d)return true; var p=q.d.split(':'); return a[p[0]]===p[1]; }); }
-function gp(s,a) { var v=gv(s,a),req=v.filter(function(q){return q.e;}),n=req.filter(function(q){return a[q.id]&&a[q.id]!==''}); return {a:n.length,t:req.length,p:req.length?Math.round(n.length/req.length*100):0}; }
-function gvPbl(line) { return PBL_Q.filter(function(q) { if(!q.d)return true; var p=q.d.split(':'); return line[p[0]]===p[1]; }); }
+function gv(s,a) { var gQ=s.q.find(function(q){return q.g;}); if(gQ&&a[gQ.id]==='no')return [gQ]; var vis={}; s.q.forEach(function(q){ if(!q.d){vis[q.id]=true;return;} var p=q.d.split(':'); vis[q.id]=!!vis[p[0]]&&a[p[0]]===p[1]; }); return s.q.filter(function(q){return vis[q.id];}); }
+function gp(s,a) { var v=gv(s,a),req=v.filter(function(q){return q.e;}),n=req.filter(function(q){return a[q.id]&&a[q.id]!==''&&!isADefinir(a[q.id],q.t)}); return {a:n.length,t:req.length,p:req.length?Math.round(n.length/req.length*100):0}; }
+function gvPbl(line) { var vis={}; PBL_Q.forEach(function(q){ if(!q.d){vis[q.id]=true;return;} var p=q.d.split(':'); vis[q.id]=!!vis[p[0]]&&line[p[0]]===p[1]; }); return PBL_Q.filter(function(q){return vis[q.id];}); }
 
 function getTriggers(a) {
   var ts = [];
@@ -245,6 +250,7 @@ function getTriggers(a) {
 function isADefinir(val, qType) {
   if (!val || val === '') return false;
   if (val === 'tbd') return true;
+  if (qType === 'multi' && val.split('|||').indexOf('tbd') >= 0) return true;
   if (qType !== 'select' && qType !== 'multi' && /definir/i.test(val)) return true;
   return false;
 }
@@ -276,22 +282,22 @@ var DESC = {
   // Seção 1 — Info Gerais
   g1:'Razão social ou nome do cliente contratante. Será o identificador principal do projeto.',
   g2:'Código interno do projeto no padrão Invent: I + 2 dígitos + ponto + 3 ou 4 dígitos. Ex: I24.001 ou I24.0001.',
+  g_codinome:'Nome de uso do projeto nos documentos e comunicações — geralmente o nome do cliente ou um codinome curto. Ex: PAYLESS, Projeto Colibri.',
   g3:'Cidade e estado do Centro de Distribuição onde o WCS será implantado. Ex: São Paulo, SP.',
   g4:'Indica se é uma implantação nova ou expansão/modificação de sistema WCS já existente no cliente.',
   g4a:'Descreva os módulos ou funcionalidades que serão adicionados ao sistema existente.',
-  g5:'Sistema de Gerenciamento de Armazém que integrará com o WCS. Ex: SAP EWM, TOTVS WMS, CONCINCO.',
-  g6:'Sistema ERP do cliente. Impacta mapeamento de integrações de pedidos, SKUs e nota fiscal.',
+  g5:'Sistema de gestão do armazém do cliente. Pode ser WMS (ex: CONCINCO, TOTVS, Infor), EWM/SAP, ou outros sistemas legados.',
   g_golive:'Data alvo para entrada em produção (Go-Live). Impacta dimensionamento de equipe e cronograma.',
   // Seção 2 — Layout e Caixas
+  c2:'Indica se o CD opera com mais de um tipo/tamanho de caixa. Quando sim, permite selecionar múltiplos tipos.',
   l1:'Tipo de embalagem que circulará no sistema (esteira, sorter, PBL). Define dimensionamento dos equipamentos.',
+  l1_m:'Selecione todos os tipos de caixa/embalagem que circulam no sistema. Use "A definir" se ainda não está definido.',
   l_esteira:'Presença de esteiras transportadoras (conveyor). Impacta módulos de controle de fluxo do WCS.',
   l3:'Piso elevado no CD para ampliar área de picking. Impacta arquitetura dos módulos por nível.',
   l5:'Número de pavimentos do mezanino (excluindo o térreo). Cada nível pode ter controle independente no WCS.',
   l6:'Robôs Móveis Autônomos (AMR). Indica se o WCS precisa integrar com sistema de AGV/AMR.',
   // Seção 3 — Cubagem
   c1:'Define qual sistema calcula volume e dimensões do pedido para seleção da embalagem correta.',
-  c2:'Indica se o CD usa diferentes tamanhos de caixa. Impacta o módulo de seleção de embalagem.',
-  c2a:'Liste os tipos de caixa com dimensões ou referências. Ex: Papelão P (30x20x15cm), M (40x30x20cm).',
   // Seção 4 — Order Start
   os_r:'Define qual sistema (WCS ou WMS) emite o comando de início do processo de separação de pedidos.',
   os1:'Número de estações físicas de Order Start no CD. Cada OS é o ponto onde a caixa é associada ao pedido.',
@@ -339,7 +345,8 @@ var DESC = {
   fc_if:'Responsável pelo fornecimento da impressora do Full Case.',
   fc_re:'Responsável pelo fornecimento do hardware do processo Full Case.',
   fc_qe:'Quantidade de equipamentos (coletores/PDVs) utilizados no Full Case.',
-  // Seção 7 — Conferência
+  // Seção 9 — Conferência & Packing
+  cf_gate:'Define se existe processo de conferência de caixas neste CD.',
   cf_t1:'Método de conferência das caixas desviadas: cega (sem ver o pedido), item a item, multiplicador ou EAN.',
   cf2:'Número de estações físicas de conferência instaladas no CD.',
   cf_t2:'Critérios que acionam desvio para conferência: peso, RFID, amostragem, por cliente/produto ou 100%.',
@@ -418,7 +425,7 @@ var DESC = {
 };
 
 // ─── Input masks ──────────────────────────────────────────────────────────────
-var MASKED = { g2:'project_code', g_golive:'date', if_data_infra:'date' };
+var MASKED = { g2:'project_code', if_data_infra:'date' };
 var NUM_FIELDS = new Set([]);
 
 function applyDateMask(v) {
@@ -460,6 +467,8 @@ function QF({ q, v, ch, a, qid }) {
   var borderLeft = q.g ? `3px solid ${Y}` : 'none';
   var pl = q.g ? 1.5 : 0;
   var mask = MASKED[q.id] || null;
+  var isTbd = isADefinir(v, q.t);
+  var tbdInputSx = isTbd ? {'& .MuiInputBase-input':{color:Y}} : {};
   var maskPh = mask==='date' ? 'DD/MM/AAAA' : mask==='project_code' ? 'I24.001' : (q.p||'');
   function handleMasked(e) {
     var raw = e.target.value;
@@ -480,7 +489,7 @@ function QF({ q, v, ch, a, qid }) {
       </Box>
 
       {q.t === 'text' && !NUM_FIELDS.has(q.id) && (
-        <TextField fullWidth size="small" value={v||''} onChange={mask ? handleMasked : function(e){ch(q.id,e.target.value)}} placeholder={maskPh} />
+        <TextField fullWidth size="small" value={v||''} onChange={mask ? handleMasked : function(e){ch(q.id,e.target.value)}} placeholder={maskPh} sx={tbdInputSx} />
       )}
       {q.t === 'text' && NUM_FIELDS.has(q.id) && (
         <TextField
@@ -526,12 +535,12 @@ function QF({ q, v, ch, a, qid }) {
         />
       )}
       {q.t === 'textarea' && (
-        <TextField fullWidth size="small" multiline minRows={2} value={v||''} onChange={function(e){ch(q.id,e.target.value)}} placeholder={q.p||''} />
+        <TextField fullWidth size="small" multiline minRows={2} value={v||''} onChange={function(e){ch(q.id,e.target.value)}} placeholder={q.p||''} sx={tbdInputSx} />
       )}
       {q.t === 'select' && (
-        <Select fullWidth size="small" displayEmpty value={v||''} onChange={function(e){ch(q.id,e.target.value)}}>
+        <Select fullWidth size="small" displayEmpty value={v||''} onChange={function(e){ch(q.id,e.target.value)}} sx={isTbd ? {'& .MuiSelect-select':{color:Y}} : {}}>
           <MenuItem value=""><em style={{color:'#666'}}>--</em></MenuItem>
-          {(q.o||[]).map(function(ov){return <MenuItem key={ov} value={ov}>{to(ov)}</MenuItem>;})}
+          {(q.o||[]).map(function(ov){return <MenuItem key={ov} value={ov} sx={ov==='tbd'?{color:Y}:{}}>{to(ov)}</MenuItem>;})}
         </Select>
       )}
       {q.t === 'wms' && (
@@ -542,6 +551,7 @@ function QF({ q, v, ch, a, qid }) {
             onChange={function(e){ch(q.id,e.target.value);saveCustomWms(e.target.value);}}
             placeholder="Ex: CONCINCO"
             inputProps={{ list:'wms-datalist' }}
+            sx={tbdInputSx}
           />
           <datalist id="wms-datalist">{getWmsList().map(function(w){return <option key={w} value={w}/>;})}</datalist>
           <Typography sx={{ fontSize:10, color:'text.disabled', mt:'3px' }}>Não encontrou? Digite para adicionar automaticamente.</Typography>
@@ -917,7 +927,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
   var mdState = useState([]), mezDetails = mdState[0], setMezDetails = mdState[1];
   var etqState = useState([]), etiquetas = etqState[0], setEtiquetas = etqState[1];
   var sqState = useState(''), search = sqState[0], setSearch = sqState[1];
-  var csState = useState(null), curSec = csState[0], setCurSec = csState[1];
+  var csState = useState('ge'), curSec = csState[0], setCurSec = csState[1];
   var adcState = useState(true), aDefCollapsed = adcState[0], setADefCollapsed = adcState[1];
   var rcState = useState(false), rightCollapsed = rcState[0], setRightCollapsed = rcState[1];
   var cpState = useState({ph1:true,ph2:true,ph3:true}), collPhases = cpState[0], setCollPhases = cpState[1];
@@ -926,6 +936,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
   var spState = useState(''), scratchpad = spState[0], setScratchpad = spState[1];
   var mnState = useState(''), meetingNotes = mnState[0], setMeetingNotes = mnState[1];
   var mnoState = useState(function(){ try{ var v=localStorage.getItem('nexus_kickoff_mno'); return v===null?true:v==='1'; }catch{ return true; } }), meetingNotesOpen = mnoState[0], setMeetingNotesOpen = mnoState[1];
+  var si1bState = useState(false), showIn1b = si1bState[0], setShowIn1b = si1bState[1];
   var fr = useRef(), cpRef = useRef();
 
   // Sync meetingNotesOpen from localStorage on mount and on HMR (Fast Refresh re-runs effects)
@@ -950,6 +961,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
     setEtiquetas(p.etiquetas || []);
     setScratchpad(p.scratchpad || '');
     setMeetingNotes(p.meetingNotes || '');
+    setShowIn1b(!!(p.answers && p.answers['in1b']));
     setPid(projectId);
   }, [projectId]);
 
@@ -1003,7 +1015,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
   var tgo = useCallback(function(id){setSo(function(p){var n=Object.assign({},p);n[id]=!p[id];return n;});},[]);
 
   var bJ = function(){var o={meta:{project:a.g1||a.g2||'WCS',date:new Date().toISOString(),v:'4.0',total_pct:tp,filled:ta},sections:{},progress:{},notes:{},pbl_lines:[],os_devices:[],os_details:[],mez_details:[],etiquetas_custom:[],meeting_notes:meetingNotes};SEC.forEach(function(s){var d={};gv(s,a).forEach(function(q){if(a[q.id]&&a[q.id]!=='')d[q.id]=a[q.id]});if(Object.keys(d).length)o.sections[s.id]=d;if(nt[s.id])o.notes[s.id]=nt[s.id];var pr=gpr(s);o.progress[s.id]={title:s.t,pct:pr.p,filled:pr.a,total:pr.t};});o.pbl_lines=pblLines.map(function(line){var d={};gvPbl(line).forEach(function(q){if(line[q.id]&&line[q.id]!=='')d[q.id]=line[q.id];});return d;}).filter(function(d){return Object.keys(d).length>0});o.os_devices=osDevices.filter(function(d){return d.type||d.qty});o.os_details=osDetailsList.filter(function(v){return v});o.mez_details=mezDetails.filter(function(v){return v});o.etiquetas_custom=etiquetas.filter(function(e){return e.name});return o;};
-  var bM = function(pend){var md='# NEXUS Kickoff — '+(a.g1||a.g2||'WCS')+'\n\n';if(!pend)md+='> **Prontidão total: '+tp+'%** · '+ta+' respostas preenchidas\n\n';SEC.forEach(function(s){if(s.id==='pb')return;var vis=gv(s,a);var items=pend==='tbd'?vis.filter(function(q){return a[q.id]==='tbd';}):pend?vis.filter(function(q){return !a[q.id]||a[q.id]==='';}):vis.filter(function(q){return a[q.id]&&a[q.id]!=='';});if(!items.length)return;var pr=gpr(s);var pctStr=pr.p===100?'100% ✓':pr.p+'% ('+pr.a+'/'+pr.t+')';md+='## '+s.t+' — '+pctStr+'\n';items.forEach(function(q){if(pend){md+='- [ ] '+q.q+'\n';}else{var v=a[q.id];if(q.t==='select'||q.t==='wms')v=to(v);if(q.t==='multi')v=v.split('|||').map(to).join(', ');md+='- **'+q.q+':** '+v+'\n';}});if(!pend&&nt[s.id])md+='\n> '+nt[s.id]+'\n';md+='\n';});if(!pend&&a.p1==='yes'&&pblLines.length>0){var pbSec=SEC.find(function(s){return s.id==='pb';});var pbPr=pbSec?gpr(pbSec):{p:0,a:0,t:0};var pbPctStr=pbPr.p===100?'100% ✓':pbPr.p+'% ('+pbPr.a+'/'+pbPr.t+')';md+='## PBL / FlowRack — '+pbPctStr+'\n';pblLines.forEach(function(line,i){md+='### Linha '+(i+1)+'\n';gvPbl(line).forEach(function(q){if(line[q.id]&&line[q.id]!==''){var v=line[q.id];if(q.t==='select')v=to(v);md+='- **'+q.q+':** '+v+'\n';}});md+='\n';});}return md;};
+  var bM = function(pend){var md='# NEXUS Kickoff — '+(a.g1||a.g2||'WCS')+'\n\n';if(!pend)md+='> **Prontidão total: '+tp+'%** · '+ta+' respostas preenchidas\n\n';SEC.forEach(function(s){if(s.id==='pb')return;var vis=gv(s,a);var items=pend==='tbd'?vis.filter(function(q){return isADefinir(a[q.id],q.t);}):pend?vis.filter(function(q){return !a[q.id]||a[q.id]==='';}):vis.filter(function(q){return a[q.id]&&a[q.id]!=='';});if(!items.length)return;var pr=gpr(s);var pctStr=pr.p===100?'100% ✓':pr.p+'% ('+pr.a+'/'+pr.t+')';md+='## '+s.t+' — '+pctStr+'\n';items.forEach(function(q){if(pend){md+='- [ ] '+q.q+'\n';}else{var v=a[q.id];if(q.t==='select'||q.t==='wms')v=to(v);if(q.t==='multi')v=v.split('|||').map(to).join(', ');md+='- **'+q.q+':** '+v+'\n';}});if(!pend&&nt[s.id])md+='\n> '+nt[s.id]+'\n';md+='\n';});if(!pend&&a.p1==='yes'&&pblLines.length>0){var pbSec=SEC.find(function(s){return s.id==='pb';});var pbPr=pbSec?gpr(pbSec):{p:0,a:0,t:0};var pbPctStr=pbPr.p===100?'100% ✓':pbPr.p+'% ('+pbPr.a+'/'+pbPr.t+')';md+='## PBL / FlowRack — '+pbPctStr+'\n';pblLines.forEach(function(line,i){md+='### Linha '+(i+1)+'\n';gvPbl(line).forEach(function(q){if(line[q.id]&&line[q.id]!==''){var v=line[q.id];if(q.t==='select')v=to(v);md+='- **'+q.q+':** '+v+'\n';}});md+='\n';});}return md;};
   var bJSec = function(secId){var s=SEC.find(function(x){return x.id===secId;});if(!s)return{};var d={};gv(s,a).forEach(function(q){if(a[q.id]&&a[q.id]!=='')d[q.id]=a[q.id];});return{section:secId,title:s.t,data:d,notes:nt[secId]||''};};
   var bMSec = function(secId){var s=SEC.find(function(x){return x.id===secId;});if(!s)return'';var vis=gv(s,a);var md='## '+s.t+'\n';vis.filter(function(q){return a[q.id]&&a[q.id]!=='';}).forEach(function(q){var v=a[q.id];if(q.t==='select'||q.t==='wms')v=to(v);if(q.t==='multi')v=v.split('|||').map(to).join(', ');md+='- **'+q.q+':** '+v+'\n';});if(nt[secId])md+='\n> '+nt[secId]+'\n';return md;};
   var hi = function(file){var rd=new FileReader();rd.onload=function(ev){try{var j=JSON.parse(ev.target.result);var flat={};if(j.sections){var vs=Object.values(j.sections);for(var i=0;i<vs.length;i++){var sec=vs[i];for(var k in sec)flat[k]=sec[k];}}if(Object.keys(flat).length)setA(flat);if(j.notes)setN(j.notes);if(Array.isArray(j.pbl_lines)&&j.pbl_lines.length)setPblLines(j.pbl_lines);if(Array.isArray(j.os_devices))setOsDevices(j.os_devices);if(Array.isArray(j.os_details))setOsDetailsList(j.os_details);if(Array.isArray(j.mez_details))setMezDetails(j.mez_details);if(Array.isArray(j.etiquetas_custom))setEtiquetas(j.etiquetas_custom);}catch(err){}};rd.readAsText(file);};
@@ -1019,7 +1031,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
     var existing = loadProject(currentPid);
     upsertProject(Object.assign({}, existing || {
       id: currentPid, code: generateCode(),
-      client: a.g1 || 'Sem cliente', name: a.g2 || a.g1 || 'Kickoff',
+      client: a.g1 || 'Sem cliente', name: a.g_codinome || a.g2 || a.g1 || 'Kickoff',
       createdAt: now,
     }, {
       answers: a, notes: nt, pblLines: pblLines,
@@ -1032,7 +1044,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
     if (onProjectSaved) onProjectSaved(currentPid);
     setExM({t:'Baixar Kickoff',j:bJ(),m:bM(false),slug:'Nexus_Kickoff_'+(a.g1||'SemCliente').replace(/[\s\\/:\*?"<>|]+/g,'_')+'_'+(a.g2||'SemCodigo').replace(/[\s\\/:\*?"<>|]+/g,'_')});
   };
-  var bJPend = function(mode){var r={meta:{project:a.g1||a.g2||'WCS',date:new Date().toISOString(),v:'4.0'},pendencias:[]};SEC.forEach(function(s){var vis=gv(s,a);vis.filter(function(q){return mode==='tbd'?a[q.id]==='tbd':(!a[q.id]||a[q.id]==='');}).forEach(function(q){r.pendencias.push({secao:s.t,secao_id:s.id,questao_id:q.id,questao:q.q,obrigatoria:!!q.e});});});return r;};
+  var bJPend = function(mode){var r={meta:{project:a.g1||a.g2||'WCS',date:new Date().toISOString(),v:'4.0'},pendencias:[]};SEC.forEach(function(s){var vis=gv(s,a);vis.filter(function(q){return mode==='tbd'?isADefinir(a[q.id],q.t):(!a[q.id]||a[q.id]==='');}).forEach(function(q){r.pendencias.push({secao:s.t,secao_id:s.id,questao_id:q.id,questao:q.q,obrigatoria:!!q.e});});});return r;};
   var exP = function(){setExM({t:'Pendências',j:bJPend(),m:bM(true),jTbd:bJPend('tbd'),mTbd:bM('tbd'),slug:'Nexus_Kickoff_'+(a.g1||'SemCliente').replace(/[\s\\/:\*?"<>|]+/g,'_')+'_'+(a.g2||'SemCodigo').replace(/[\s\\/:\*?"<>|]+/g,'_')});};
   var exSec = function(secId){var s=SEC.find(function(x){return x.id===secId;});setExM({t:'Seção: '+(s?s.t:secId),j:bJSec(secId),m:bMSec(secId),slug:'Nexus_Kickoff_'+(a.g1||'SemCliente').replace(/[\s\\/:\*?"<>|]+/g,'_')+'_'+(a.g2||'SemCodigo').replace(/[\s\\/:\*?"<>|]+/g,'_')});};
   var doReset = function(secId){var s=SEC.find(function(x){return x.id===secId;});setConfirmModal({msg:'Resetar a seção "'+s.t+'"?',onConfirm:function(){setA(function(p){var n=Object.assign({},p);s.q.forEach(function(q){delete n[q.id];});return n;});setN(function(p){var n=Object.assign({},p);delete n[secId];return n;});if(secId==='pb')setPblLines([{}]);if(secId==='os'){setOsDevices([]);setOsDetailsList([]);}if(secId==='la')setMezDetails([]);if(secId==='et')setEtiquetas([]);setConfirmModal(null);}});};
@@ -1055,7 +1067,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
     pblLines.forEach(function(line){
       var vis=gvPbl(line).filter(function(q){return q.e;});
       tot+=vis.length;
-      fil+=vis.filter(function(q){return line[q.id]&&line[q.id]!=='';}).length;
+      fil+=vis.filter(function(q){return line[q.id]&&line[q.id]!==''&&!isADefinir(line[q.id],q.t);}).length;
     });
     return{a:fil,t:tot};
   })();
@@ -1132,7 +1144,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
         )}
 
         {/* Phase groups */}
-        {!searchResults && (
+        {!searchResults && aDefCollapsed && (
           <Box sx={{ flex:1, overflowY:'auto', py:'4px' }}>
             {PHASES.map(function(ph){
               var collapsed = !!collPhases[ph.id];
@@ -1148,12 +1160,16 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
                     sx={{ width:'100%', display:'flex', alignItems:'center', gap:'7px', p:'10px 12px 6px', bgcolor:'transparent', border:'none', cursor:'pointer', textAlign:'left' }}
                   >
                     <Typography sx={{ fontSize:8, color:'primary.main', transition:'.18s', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', display:'inline-block' }}>▾</Typography>
-                    <Typography sx={{ flex:1, fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color: collapsed ? 'text.disabled' : 'text.primary' }}>{ph.label}</Typography>
+                    <Typography sx={{ flex:1, fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color: ppct===100 ? '#22c55e' : collapsed ? 'text.disabled' : 'text.primary' }}>{ph.label}</Typography>
+                    {ppct === 100
+                      ? <Box sx={{ width:8, height:8, borderRadius:'50%', bgcolor:'#22c55e', flexShrink:0 }} />
+                      : <Box sx={{ width:8, height:8, borderRadius:'50%', border:'1.5px solid', borderColor: ppct > 0 ? Y : 'rgba(255,255,255,0.2)', bgcolor:'transparent', flexShrink:0 }} />
+                    }
                   </Box>
                   {!collapsed && phSecs.map(function(s){
                     var pr = gpr(s);
                     var gQ = s.q.find(function(q){return q.g;});
-                    var isNA = gQ && a[gQ.id]==='no';
+                    var isNA = s.id==='pk' ? (a['cf_gate']==='no' && a['pk1']==='no') : (gQ && a[gQ.id]==='no');
                     var isActive = curSec===s.id;
                     var isDone = pr.p===100 && pr.t>0;
                     var deptColor = getSecColor(s.id);
@@ -1162,13 +1178,13 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
                         key={s.id}
                         component="button"
                         onClick={function(){goSec(s.id);}}
-                        sx={{ width:'100%', display:'flex', alignItems:'center', gap:'9px', p:'7px 12px', bgcolor: isActive ? 'rgba(255,197,0,0.08)' : 'transparent', border:'none', borderLeft:'2px solid', borderLeftColor: isActive ? 'primary.main' : isDone ? '#22c55e' : 'transparent', cursor:'pointer', textAlign:'left', opacity: isNA ? 0.4 : 1 }}
+                        sx={{ width:'100%', display:'flex', alignItems:'center', gap:'9px', p:'7px 12px', bgcolor: isActive ? 'rgba(255,197,0,0.08)' : 'transparent', border:'none', borderLeft:'2px solid', borderLeftColor: isActive ? 'primary.main' : (isDone && !isNA) ? '#22c55e' : 'transparent', cursor:'pointer', textAlign:'left' }}
                       >
-                        <Box sx={{ minWidth:21, height:21, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'monospace', fontSize:9, fontWeight:700, bgcolor: isActive ? 'primary.main' : isDone ? 'rgba(34,197,94,0.2)' : '#383838', color: isActive ? '#0b0e14' : isDone ? '#22c55e' : 'text.disabled', flexShrink:0 }}>
+                        <Box sx={{ minWidth:21, height:21, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'monospace', fontSize:9, fontWeight:700, bgcolor: isActive ? 'primary.main' : (isDone && !isNA) ? 'rgba(34,197,94,0.2)' : isNA ? '#383838' : 'rgba(255,255,255,0.75)', color: isActive ? '#0b0e14' : (isDone && !isNA) ? '#22c55e' : isNA ? 'text.disabled' : '#0b0e14', flexShrink:0 }}>
                           {s.n}
                         </Box>
                         <Box sx={{ flex:1, minWidth:0 }}>
-                          <Typography sx={{ fontSize:12, fontWeight: isActive ? 700 : 500, color: isActive ? 'primary.main' : isDone ? '#22c55e' : 'text.primary', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.t}</Typography>
+                          <Typography sx={{ fontSize:12, fontWeight: isActive ? 700 : 500, color: isActive ? 'primary.main' : isNA ? 'text.disabled' : isDone ? '#22c55e' : 'text.primary', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.t}</Typography>
                           {isActive && (
                             <Box sx={{ height:3, borderRadius:'2px', bgcolor:'#383838', overflow:'hidden', mt:'3px' }}>
                               <Box sx={{ height:3, borderRadius:'2px', width:pr.p+'%', bgcolor: isDone ? '#22c55e' : pr.p>0 ? deptColor : 'transparent', transition:'width .3s' }} />
@@ -1190,65 +1206,56 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
 
         {/* A Definir accordion — moved here from right panel */}
         {!searchResults && (
-          <Box sx={{ borderTop:'1px solid', borderColor:'divider', pt:'10px', px:'12px', pb:'8px' }}>
+          <Box sx={{ ...(!aDefCollapsed ? { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' } : {}), border:'1px solid rgba(245,158,11,0.25)', bgcolor:'rgba(245,158,11,0.04)', pt:'8px', px:'10px', pb:'8px' }}>
             <Box
               component="button"
               onClick={function(){setADefCollapsed(function(v){return !v;});}}
-              sx={{ width:'100%', display:'flex', alignItems:'center', gap:0.75, bgcolor:'transparent', border:'none', cursor:'pointer', p:0, mb: aDefCollapsed ? 0 : 1 }}
+              sx={{ width:'100%', display:'flex', alignItems:'center', gap:0.75, bgcolor:'transparent', border:'none', cursor:'pointer', p:0, mb: aDefCollapsed ? 0 : 1, flexShrink:0 }}
             >
               <WarningAmberRoundedIcon sx={{ fontSize:13, color:'#f59e0b' }} />
-              <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'text.disabled', flex:1, textAlign:'left' }}>A Definir</Typography>
+              <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'#f59e0b', flex:1, textAlign:'left' }}>A Definir</Typography>
               <Chip label={aDefinir.length} size="small" sx={{ fontSize:9, height:16, bgcolor: aDefinir.length > 0 ? 'rgba(245,158,11,0.15)' : '#383838', color: aDefinir.length > 0 ? '#f59e0b' : 'text.disabled', border:'none' }} />
-              <KeyboardArrowDownRoundedIcon sx={{ fontSize:14, color:'text.disabled', transform: aDefCollapsed ? 'none' : 'rotate(180deg)', transition:'transform .2s' }} />
+              <KeyboardArrowDownRoundedIcon sx={{ fontSize:14, color:'#f59e0b', transform: aDefCollapsed ? 'none' : 'rotate(180deg)', transition:'transform .2s' }} />
             </Box>
             {!aDefCollapsed && (
-              aDefinir.length === 0
-                ? <Typography sx={{ fontSize:11, color:'text.disabled', fontStyle:'italic' }}>Nenhum item a definir.</Typography>
-                : <Stack spacing={0}>
-                    {aDefinir.map(function(item,i){return (
-                      <Box
-                        key={item.qId}
-                        component="button"
-                        onClick={function(){
-                          var sec = SEC.find(function(s){ return s.id === item.secId; });
-                          if (sec) {
-                            var isOpt = sec.q.some(function(q){ return q.id === item.qId && !q.e; });
-                            if (isOpt) setSo(function(p){ var n=Object.assign({},p); n[item.secId]=true; return n; });
-                          }
-                          goSec(item.secId);
-                          setPendingScrollQId(item.qId);
-                        }}
-                        sx={{
-                          display:'flex', alignItems:'flex-start', gap:1, py:'6px', width:'100%',
-                          bgcolor:'transparent', border:'none', cursor:'pointer', textAlign:'left',
-                          borderBottom: i<aDefinir.length-1 ? '1px solid' : 'none', borderColor:'divider',
-                          '&:hover .adef-label':{ color:'primary.main' },
-                        }}
-                      >
-                        <Box sx={{ width:5, height:5, borderRadius:'50%', bgcolor:'#f59e0b', flexShrink:0, mt:'4px' }} />
-                        <Box sx={{ flex:1, minWidth:0 }}>
-                          <Typography className="adef-label" sx={{ fontSize:11, fontWeight:600, color:'text.primary', transition:'color .15s', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.qLabel}</Typography>
-                          <Typography sx={{ fontSize:9, color:'text.disabled', mt:'1px' }}>{item.secLabel}</Typography>
+              <Box sx={{ flex:1, overflowY:'auto' }}>
+                {aDefinir.length === 0
+                  ? <Typography sx={{ fontSize:11, color:'text.disabled', fontStyle:'italic' }}>Nenhum item a definir.</Typography>
+                  : <Stack spacing={0}>
+                      {aDefinir.map(function(item,i){return (
+                        <Box
+                          key={item.qId}
+                          component="button"
+                          onClick={function(){
+                            var sec = SEC.find(function(s){ return s.id === item.secId; });
+                            if (sec) {
+                              var isOpt = sec.q.some(function(q){ return q.id === item.qId && !q.e; });
+                              if (isOpt) setSo(function(p){ var n=Object.assign({},p); n[item.secId]=true; return n; });
+                            }
+                            goSec(item.secId);
+                            setPendingScrollQId(item.qId);
+                          }}
+                          sx={{
+                            display:'flex', alignItems:'flex-start', gap:1, py:'6px', width:'100%',
+                            bgcolor:'transparent', border:'none', cursor:'pointer', textAlign:'left',
+                            borderBottom: i<aDefinir.length-1 ? '1px solid' : 'none', borderColor:'divider',
+                            '&:hover .adef-label':{ color:'primary.main' },
+                          }}
+                        >
+                          <Box sx={{ width:5, height:5, borderRadius:'50%', bgcolor:'#f59e0b', flexShrink:0, mt:'4px' }} />
+                          <Box sx={{ flex:1, minWidth:0 }}>
+                            <Typography className="adef-label" sx={{ fontSize:11, fontWeight:600, color:'text.primary', transition:'color .15s', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.qLabel}</Typography>
+                            <Typography sx={{ fontSize:9, color:'text.secondary', mt:'1px' }}>{item.secLabel}</Typography>
+                          </Box>
                         </Box>
-                      </Box>
-                    );})}
-                  </Stack>
+                      );})}
+                    </Stack>
+                }
+              </Box>
             )}
           </Box>
         )}
 
-        {/* Bottom actions */}
-        <Box sx={{ p:'10px 12px', borderTop:'1px solid', borderColor:'divider', display:'flex', flexDirection:'column', gap:'6px' }}>
-          <Button
-            fullWidth size="small"
-            variant={curSec==='__rev__' ? 'contained' : 'outlined'}
-            color="primary"
-            onClick={function(){setCurSec('__rev__');}}
-            sx={{ fontSize:12 }}
-          >
-            Revisar respostas
-          </Button>
-        </Box>
       </Box>
     );
   }
@@ -1273,9 +1280,9 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
       );
     }
     return (
-      <Box sx={{ width:270, minWidth:270, borderLeft:'1px solid', borderColor:'divider', overflowY:'auto', bgcolor:'#111111', p:2, display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
+      <Box sx={{ width:270, minWidth:270, borderLeft:'1px solid', borderColor:'divider', bgcolor:'#111111', display:'flex', flexDirection:'column', flexShrink:0, overflow:'hidden' }}>
         {/* Header: go to project + fullscreen + collapse */}
-        <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', mb:-1 }}>
+        <Box sx={{ display:'flex', alignItems:'center', justifyContent:'space-between', px:2, pt:2, pb:1, flexShrink:0 }}>
           {onNavigate && (
             <Button
               size="small"
@@ -1301,95 +1308,74 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
           </Box>
         </Box>
 
-        {/* Meeting Notes accordion */}
-        <Box sx={{ border:'1px solid rgba(255,197,0,0.3)', borderRadius:'8px', overflow:'hidden', bgcolor:'rgba(255,197,0,0.03)' }}>
-          <Box
-            component="button"
-            onClick={function(){setMeetingNotesOpen(function(v){ var next=!v; try{localStorage.setItem('nexus_kickoff_mno',next?'1':'0');}catch{} return next; });}}
-            sx={{ width:'100%', display:'flex', alignItems:'center', gap:0.75, bgcolor:'transparent', border:'none', cursor:'pointer', p:'10px 12px', textAlign:'left' }}
-          >
-            <EditNoteRoundedIcon sx={{ fontSize:16, color:Y, flexShrink:0 }} />
-            <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:Y, flex:1 }}>
-              Notas da Reunião
-            </Typography>
-            {meetingNotes && !meetingNotesOpen && (
-              <Box sx={{ width:6, height:6, borderRadius:'50%', bgcolor:Y, flexShrink:0, mr:0.5 }} />
-            )}
-            <KeyboardArrowDownRoundedIcon sx={{ fontSize:14, color:Y, transform:meetingNotesOpen?'rotate(180deg)':'none', transition:'transform .2s', flexShrink:0 }} />
-          </Box>
-          {meetingNotesOpen && (
-            <Box sx={{ px:'10px', pb:'10px', pt:'2px' }}>
-              <Box
-                component="textarea"
-                value={meetingNotes}
-                onChange={function(e){setMeetingNotes(e.target.value);}}
-                placeholder={'Anote aqui os pontos discutidos na reunião para preencher o formulário depois...'}
-                sx={{
-                  width:'100%', minHeight:490, maxHeight:700, resize:'vertical', boxSizing:'border-box',
-                  background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,197,0,0.15)',
-                  borderRadius:'6px', color:'rgba(255,255,255,0.85)', fontSize:12, fontFamily:'inherit',
-                  p:'8px', outline:'none', lineHeight:1.6,
-                  '&::placeholder':{ color:'rgba(255,255,255,0.2)' },
-                  '&:focus':{ borderColor:'rgba(255,197,0,0.4)' },
-                }}
-              />
-            </Box>
-          )}
-        </Box>
-
         {/* Readiness */}
-        <Box>
-          <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'text.disabled', mb:1.25 }}>Prontidão do Projeto</Typography>
-          <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb:'6px' }}>
-            <Box sx={{ flex:1, height:7, borderRadius:'4px', bgcolor:'#383838', overflow:'hidden' }}>
-              <Box sx={{ height:7, borderRadius:'4px', width:tp+'%', bgcolor:pctColor, transition:'width .4s' }} />
+        <Box sx={{ px:2, pb:2, flexShrink:0 }}>
+          <Stack direction="row" alignItems="center" sx={{ mb:1.25, gap:2 }}>
+            <Typography sx={{ fontSize:11, fontWeight:700, color:pctColor }}>{tp}%</Typography>
+            <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'text.disabled' }}>Progresso Kickoff</Typography>
+          </Stack>
+          <Box sx={{ height:7, borderRadius:'4px', bgcolor:'#383838', overflow:'hidden' }}>
+            <Box sx={{ height:7, borderRadius:'4px', width:tp+'%', bgcolor:pctColor, transition:'width .4s' }} />
+          </Box>
+        </Box>
+
+        {/* Meeting Notes accordion — cresce quando aberto, encolhe quando fechado */}
+        <Box sx={{ flexGrow:meetingNotesOpen ? 1 : 0, flexShrink:1, px:2, display:'flex', flexDirection:'column', minHeight:0, mb:2 }}>
+          <Box sx={{ border:'1px solid rgba(255,197,0,0.3)', borderRadius:'8px', overflow:'hidden', bgcolor:'rgba(255,197,0,0.03)', display:'flex', flexDirection:'column', flexGrow:meetingNotesOpen ? 1 : 0 }}>
+            <Box
+              component="button"
+              onClick={function(){setMeetingNotesOpen(function(v){ var next=!v; try{localStorage.setItem('nexus_kickoff_mno',next?'1':'0');}catch{} return next; });}}
+              sx={{ width:'100%', display:'flex', alignItems:'center', gap:0.75, bgcolor:'transparent', border:'none', cursor:'pointer', p:'10px 12px', textAlign:'left', flexShrink:0 }}
+            >
+              <EditNoteRoundedIcon sx={{ fontSize:16, color:Y, flexShrink:0 }} />
+              <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:Y, flex:1 }}>
+                Notas da Reunião
+              </Typography>
+              {meetingNotes && !meetingNotesOpen && (
+                <Box sx={{ width:6, height:6, borderRadius:'50%', bgcolor:Y, flexShrink:0, mr:0.5 }} />
+              )}
+              <KeyboardArrowDownRoundedIcon sx={{ fontSize:14, color:Y, transform:meetingNotesOpen?'rotate(180deg)':'none', transition:'transform .2s', flexShrink:0 }} />
             </Box>
-            <Typography sx={{ fontFamily:'monospace', fontSize:14, fontWeight:700, color:pctColor, flexShrink:0 }}>{tp}%</Typography>
-          </Stack>
-          <Typography sx={{ fontSize:10, color:'text.disabled' }}>{ta} respostas preenchidas</Typography>
+            {meetingNotesOpen && (
+              <Box sx={{ flex:1, px:'10px', pb:'10px', pt:'2px', display:'flex', flexDirection:'column', minHeight:0 }}>
+                <Box
+                  component="textarea"
+                  value={meetingNotes}
+                  onChange={function(e){setMeetingNotes(e.target.value);}}
+                  placeholder={'Anote aqui os pontos discutidos na reunião para preencher o formulário depois...'}
+                  sx={{
+                    flex:1, minHeight:0, width:'100%', boxSizing:'border-box',
+                    resize:'none', overflowY:'auto',
+                    background:'rgba(0,0,0,0.35)', border:'1px solid rgba(255,197,0,0.15)',
+                    borderRadius:'6px', color:'rgba(255,255,255,0.85)', fontSize:12, fontFamily:'inherit',
+                    p:'8px', outline:'none', lineHeight:1.6,
+                    '&::placeholder':{ color:'rgba(255,255,255,0.2)' },
+                    '&:focus':{ borderColor:'rgba(255,197,0,0.4)' },
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
         </Box>
 
-        {/* Phase progress */}
-        <Box>
-          <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'text.disabled', mb:1 }}>Seções</Typography>
-          <Stack spacing={1}>
-            {PHASES.map(function(ph){
-              var phSecs=SEC.filter(function(s){return ph.ids.indexOf(s.id)>=0;});
-              var ptot=0, pans=0;
-              phSecs.forEach(function(s){var p=gpr(s);ptot+=p.t;pans+=p.a;});
-              var ppct = ptot ? Math.round(pans/ptot*100) : 0;
-              var pc = ppct===100 ? '#22c55e' : ppct>0 ? Y : 'text.disabled';
-              return (
-                <Box key={ph.id}>
-                  {ppct === 100 ? (
-                    <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <Typography sx={{ fontSize:11, color:'#22c55e' }}>{ph.label.split(' & ')[0]}</Typography>
-                      <Typography sx={{ fontSize:15, color:'#22c55e', lineHeight:1 }}>✓</Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      <Box sx={{ display:'flex', justifyContent:'space-between', mb:'3px' }}>
-                        <Typography sx={{ fontSize:11, color:'text.secondary' }}>{ph.label.split(' & ')[0]}</Typography>
-                        <Typography sx={{ fontSize:10, fontFamily:'monospace', color:pc }}>{ppct}%</Typography>
-                      </Box>
-                      <Box sx={{ height:4, borderRadius:'3px', bgcolor:'#383838', overflow:'hidden' }}>
-                        <Box sx={{ height:4, borderRadius:'3px', width:ppct+'%', bgcolor:pc, transition:'width .4s' }} />
-                      </Box>
-                    </>
-                  )}
-                </Box>
-              );
-            })}
-          </Stack>
-        </Box>
-
-        {/* Export actions */}
-        <Box>
+        {/* Review + Export actions */}
+        <Box sx={{ px:2, pb:2, flexShrink:0 }}>
+          <Button
+            fullWidth size="small"
+            variant={curSec==='__rev__' ? 'contained' : 'outlined'}
+            color="primary"
+            onClick={function(){setCurSec('__rev__');}}
+            sx={{ fontSize:12, mb:1.5 }}
+          >
+            Revisar respostas ({ta})
+          </Button>
           <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'text.disabled', mb:1 }}>Exportar</Typography>
           <Stack spacing={0.75}>
             <Button fullWidth variant="contained" color="primary" size="small" startIcon={<DownloadRoundedIcon />} onClick={exA} sx={{ fontWeight:700 }}>Baixar Kickoff</Button>
-            <Button fullWidth variant="outlined" size="small" onClick={exP} sx={{ fontSize:12, borderColor:'rgba(251,191,36,0.3)', color:'#fbbf24', bgcolor:'rgba(120,53,15,0.5)', '&:hover':{ bgcolor:'rgba(120,53,15,0.7)', borderColor:'rgba(251,191,36,0.5)' } }}>Pendências</Button>
-            <Button fullWidth variant="outlined" color="inherit" size="small" onClick={function(){fr.current&&fr.current.click();}} sx={{ fontSize:12, color:'text.secondary', borderColor:'divider' }}>Carregar JSON</Button>
+            <Box sx={{ display:'flex', gap:0.75 }}>
+              <Button fullWidth variant="outlined" size="small" onClick={exP} sx={{ fontSize:12, borderColor:'rgba(251,191,36,0.3)', color:'#fbbf24', bgcolor:'rgba(120,53,15,0.5)', '&:hover':{ bgcolor:'rgba(120,53,15,0.7)', borderColor:'rgba(251,191,36,0.5)' } }}>Pendências</Button>
+              <Button fullWidth variant="outlined" color="inherit" size="small" onClick={function(){fr.current&&fr.current.click();}} sx={{ fontSize:12, color:'text.secondary', borderColor:'divider' }}>Carregar JSON</Button>
+            </Box>
             <input ref={fr} type="file" accept=".json" style={{display:'none'}} onChange={function(e){if(e.target.files&&e.target.files[0])hi(e.target.files[0]);e.target.value='';}} />
           </Stack>
         </Box>
@@ -1441,20 +1427,13 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
     var pr = gpr(s);
     var vis = gv(s,a);
     var eq = vis.filter(function(q){return q.e;});
-    var oq = vis.filter(function(q){return !q.e;});
+    var oq = vis.filter(function(q){return !q.e && (s.id!=='in' || q.id!=='in1b');});
     var pctColor = pr.p===100 ? '#22c55e' : pr.p>0 ? Y : 'text.disabled';
     var statusLabel = pr.p===100 ? 'Completo' : pr.p>0 ? 'Em andamento' : 'Não iniciado';
     var deptColor = getSecColor(s.id);
     return (
       <Box sx={{ p:'24px 28px 40px' }}>
         {/* Project identity strip */}
-        {(a.g1 || a.g_codinome) && (
-          <Box sx={{ display:'flex', alignItems:'center', gap:'6px', mb:2, mx:'-28px', mt:'-24px', px:'28px', pt:'10px', pb:'10px', borderBottom:'1px solid', borderColor:'divider', bgcolor:'rgba(255,255,255,0.02)' }}>
-            {a.g1 && <Typography sx={{ fontSize:11, color:'text.disabled', fontWeight:500 }}>{a.g1}</Typography>}
-            {a.g1 && a.g_codinome && <Typography sx={{ fontSize:10, color:'rgba(255,255,255,0.15)' }}>·</Typography>}
-            {a.g_codinome && <Typography sx={{ fontSize:11, fontWeight:700, color:'primary.main' }}>{a.g_codinome}</Typography>}
-          </Box>
-        )}
         {/* Header */}
         <Box sx={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', mb:1.5 }}>
           <Box>
@@ -1463,8 +1442,7 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
             <Typography sx={{ fontSize:10, color:'text.disabled', mt:'3px' }}>auto-salvo ativo</Typography>
           </Box>
           <Box sx={{ textAlign:'right', flexShrink:0 }}>
-            <Typography sx={{ fontFamily:'monospace', fontSize:32, fontWeight:700, color:pctColor, lineHeight:1 }}>{pr.p}%</Typography>
-            <Typography sx={{ fontSize:10, color:'text.disabled', mt:'2px' }}>{pr.a}/{pr.t} resp.</Typography>
+            <Typography sx={{ fontFamily:'monospace', fontSize:24, fontWeight:700, color:pctColor, lineHeight:1 }}>{pr.p}%</Typography>
             <Chip
               size="small" label={statusLabel}
               sx={{ mt:'6px', fontSize:10, fontWeight:700,
@@ -1494,7 +1472,34 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
         {/* Required fields */}
         {s.id==='pb'
           ? <PBLCard a={a} ch={ch} pblLines={pblLines} setPblLines={setPblLines} />
-          : eq.map(function(q){return <QF key={q.id} q={q} v={a[q.id]} ch={ch} a={a}/>;})
+          : eq.map(function(q){
+              var in1bQ = s.id==='in' && q.id==='in1' ? s.q.find(function(x){return x.id==='in1b';}) : null;
+              return (
+                <Box key={q.id}>
+                  <QF q={q} v={a[q.id]} ch={ch} a={a}/>
+                  {in1bQ && (
+                    showIn1b ? (
+                      <Box sx={{ display:'flex', alignItems:'flex-start', gap:0.5 }}>
+                        <Box sx={{ flex:1 }}>
+                          <QF q={in1bQ} v={a['in1b']} ch={ch} a={a} qid="in1b"/>
+                        </Box>
+                        <Tooltip title="Remover segundo tipo">
+                          <IconButton size="small" onClick={function(){setShowIn1b(false);setA(function(p){var n=Object.assign({},p);delete n['in1b'];return n;});}} sx={{ color:'text.disabled','&:hover':{color:'error.main'},mt:'30px',flexShrink:0 }}>
+                            <CloseRoundedIcon sx={{ fontSize:13 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ) : (
+                      <Tooltip title="Adicionar segundo tipo de integração">
+                        <IconButton size="small" onClick={function(){setShowIn1b(true);}} sx={{ color:'text.disabled','&:hover':{color:'primary.main'},mt:'-2px' }}>
+                          <AddRoundedIcon sx={{ fontSize:16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )
+                  )}
+                </Box>
+              );
+            })
         }
 
         {/* Special components */}
@@ -1505,38 +1510,23 @@ export function KickoffPage({ onNavigate, projectId, onProjectSaved, isFullscree
 
         {/* Optional fields */}
         {oq.length > 0 && s.id!=='pb' && (
-          <Box sx={{ mt:1.5 }}>
-            <Box
-              component="button"
-              onClick={function(){tgo(s.id);}}
-              sx={{
-                width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-                bgcolor:'transparent', border:'1px solid', borderColor:'divider', borderRadius:1,
-                cursor:'pointer', px:1.5, py:0.75, color:'text.secondary',
-                '&:hover':{ borderColor:'rgba(255,197,0,0.4)', color:'primary.main' }, transition:'.15s',
-              }}
-            >
-              <Typography sx={{ fontSize:12, fontWeight:600 }}>
-                {so[s.id] ? 'Ocultar opcionais' : 'Ver Opcionais ('+oq.length+')'}
-              </Typography>
-              <KeyboardArrowDownRoundedIcon sx={{ fontSize:16, transform: so[s.id] ? 'rotate(180deg)' : 'none', transition:'transform .2s' }} />
-            </Box>
-            {so[s.id] && (
-              <Box sx={{ mt:1, ml:1, borderLeft:'2px solid', borderColor:'divider', pl:1.5 }}>
-                {oq.map(function(q){return <QF key={q.id} q={q} v={a[q.id]} ch={ch} a={a}/>;  })}
-              </Box>
-            )}
+          <Box sx={{ mt:2.5 }}>
+            <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'primary.main', mb:1 }}>Perguntas opcionais</Typography>
+            {oq.map(function(q){return <QF key={q.id} q={q} v={a[q.id]} ch={ch} a={a}/>;  })}
           </Box>
         )}
 
         {/* Notes */}
-        <TextField
-          fullWidth multiline minRows={2} size="small"
-          value={nt[s.id]||''}
-          onChange={function(e){nc(s.id,e.target.value);}}
-          placeholder="Observações da seção..."
-          sx={{ mt:2, '& textarea':{ fontStyle:'italic', color:'text.secondary' } }}
-        />
+        <Box sx={{ mt:2.5 }}>
+          <Typography sx={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px', color:'primary.main', mb:1 }}>Observações</Typography>
+          <TextField
+            fullWidth multiline minRows={2} size="small"
+            value={nt[s.id]||''}
+            onChange={function(e){nc(s.id,e.target.value);}}
+            placeholder="Observações da seção..."
+            sx={{ '& textarea':{ fontStyle:'italic', color:'text.secondary' } }}
+          />
+        </Box>
 
         {/* Footer nav */}
         <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mt:2.25, pt:1.75, borderTop:'1px solid', borderColor:'divider' }}>

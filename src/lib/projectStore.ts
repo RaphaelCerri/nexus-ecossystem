@@ -2,6 +2,7 @@ export interface Contact {
   id: string;
   titulo: string;
   email: string;
+  phone?: string;
 }
 
 export interface Pendencia {
@@ -79,6 +80,6 @@ export function getProgress(project: NexusProject): number {
   if (project.progressPct !== undefined) return project.progressPct;
   // fallback for old projects saved before progressPct was added
   const answers = project.answers || {};
-  const filled = Object.entries(answers).filter(([k, v]) => REQUIRED_FIELDS.has(k) && v && v !== '').length;
+  const filled = Object.entries(answers).filter(([k, v]) => REQUIRED_FIELDS.has(k) && v && v !== '' && v !== 'tbd' && !String(v).toLowerCase().includes('definir')).length;
   return Math.min(100, Math.round(filled / REQUIRED_FIELDS.size * 100));
 }

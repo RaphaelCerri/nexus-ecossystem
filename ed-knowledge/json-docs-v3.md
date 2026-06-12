@@ -3,6 +3,16 @@
 > Este documento serve como dicionário de dados para o JSON exportado pela aplicação Checklist Kickoff WCS.
 > Use-o como contexto ao alimentar o JSON em qualquer IA ou sistema externo.
 >
+> **Changelog v3.2 — Duplo gate na seção pk (cf_gate + pk1):**
+> - **Seção `pk`:** adicionado `cf_gate` ("Tem Conferência?") como gate da sub-seção de conferência. Campos `cf_t1`, `cf2`, `cf_t2`, `cf4` agora só aparecem quando `cf_gate = "yes"`. Se `cf_gate = "no"` **e** `pk1 = "no"`, a seção inteira fica inativa ("escura").
+>
+> **Changelog v3.1 — Gate questions seletivas + Conferência & Packing + ajustes Info Gerais:**
+> - **Seção `ge`:** `g5` renomeado para "Sistema do Cliente" (agora abrange WMS/EWM/SAP/outros); `g6` (ERP) removido; `g_obs` removido; `g_golive` agora obrigatório.
+> - **Gate questions adicionadas** (apenas nas seções em que fazem sentido): `os_gate` (Order Start), `pt_gate` (Palletização & PTL). Seções `la`, `in`, `et`, `if` **não têm gate** — são sempre obrigatórias.
+> - **Seção `pk` renomeada para "Conferência & Packing":** campos `cf_t1`, `cf2`, `cf_t2`, `cf4` (antes seção independente `cf`) integrados à seção `pk`. A seção `cf` foi removida como section key separada — todos os campos ficam em `sections.pk`.
+> - **Seção `in`:** `in_resp` removido; `in1` ganhou opção `"tbd"`.
+> - **Numeração sequencial 1–14:** seções `pb`=6, `ct`=7, `fc`=8, `pk`=9, `so`=10, `pt`=11, `es`=12, `et`=13, `if`=14 (removidas sub-numerações 6a/6b/6c).
+
 > **Changelog v3.0 — Refatoração completa do modelo de dados:**
 > - `meta.v` atualizado para `"4.0"`.
 > - **IDs de seção encurtados:** `geral`→`ge`, `layout`→`la`, `cubagem`→`cu`, `orderstart`→`os`, `pbl`→`pb`, `cart`→`ct`, `fullcase`→`fc`, `conferencia`→`cf`, `packing`→`pk`, `sorter`→`so`, `ptl`→`pt`, `estoque`→`es`, `etiquetas`→`et`, `integracao`→`in`, `infra`→`if`.
@@ -50,7 +60,7 @@
     "pt": { "pt1": "ptl_opt", "pt3": "168", "pt_frag": "yes" },
     "es": { "es1": "yes", "es2": "yes", "es10": "yes" },
     "et": { "et_r": "wcs", "et1": "5" },
-    "in": { "in1": "rest", "in_resp": "invent" },
+    "in": { "in1": "rest" },
     "if": { "if_titul": "srv_client", "if1": "win", "if2": "mssql" }
   },
   "pbl_lines": [
@@ -117,10 +127,8 @@ Vários campos usam os mesmos valores base:
 | `g3` | Localização física do CD | texto | `"Esteio - RS"` |
 | `g4` | Novo projeto ou aditivo de projeto existente | select | `"new_proj"` = Projeto novo, `"additive"` = Aditivo, `"tbd"` |
 | `g4a` | Escopo do aditivo *(só aparece se g4 = additive)* | textarea | `"Ampliação do módulo PTL"` |
-| `g5` | Sistema WMS do cliente | select (WMS) | `"Manhattan Associates"`, `"SAP EWM"`, `"CONCINCO"`, etc. |
-| `g6` | Sistema ERP do cliente | texto | `"SAP S/4HANA"` |
-| `g_golive` | Data alvo de GoLive | texto | `"24/06/2026"` |
-| `g_obs` | Observações gerais livres | textarea | `"Cliente solicita..."` |
+| `g5` | Sistema do Cliente (WMS/EWM/SAP/outros) — **obrigatório** | select (WMS) | `"Manhattan Associates"`, `"SAP EWM"`, `"CONCINCO"`, etc. |
+| `g_golive` | Data alvo de GoLive — **obrigatório** | texto | `"24/06/2026"` |
 
 ---
 
@@ -151,7 +159,8 @@ Vários campos usam os mesmos valores base:
 
 | Campo | Descrição | Tipo | Exemplo / Opções |
 |---|---|---|---|
-| `os_r` | Responsabilidade WCS/WMS no Order Start | select (RS) | `"wcs"`, `"wms_only"`, `"both_wms_wcs"`, `"tbd"` |
+| `os_gate` | Tem Order Start? — **gate question**: se `"no"`, seção é ignorada | select | `"yes"`, `"no"`, `"tbd"` |
+| `os_r` | Responsabilidade WCS/WMS no Order Start | select (RS) | `"wcs"`, `"wms_only"`, `"both_wms_wcs"`, `"tbd"` | `"wcs"`, `"wms_only"`, `"both_wms_wcs"`, `"tbd"` |
 | `os1` | Quantidade de postos de Order Start no CD | texto | `"2"` |
 | `os_imp_etq` | Imprime etiqueta na caixa ao iniciar pedido | select | `"yes"`, `"no"`, `"tbd"` |
 | `os4` | Método de vinculação da caixa física ao pedido virtual | select | `"scan_fix"` = Scanner fixo automático, `"scan_man"` = Manual, `"tbd"` |
@@ -240,11 +249,25 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
 
 ---
 
-## Seção: `pk` — Packing (Embalagem Final)
+## Seção: `pk` — Conferência & Packing
+
+Esta seção possui **duplo gate**: `cf_gate` (conferência) e `pk1` (packing). Se ambos forem `"no"`, a seção inteira fica inativa ("escura"). Cada gate controla sua própria sub-seção.
+
+### Conferência / Auditoria de Qualidade
 
 | Campo | Descrição | Tipo | Exemplo / Opções |
 |---|---|---|---|
-| `pk1` | Possui etapa de packing — **gate question** | select | `"yes"`, `"no"` |
+| `cf_gate` | **Gate question de conferência** — se `"no"`, campos `cf_*` são ignorados — **obrigatório** | select | `"yes"`, `"no"`, `"tbd"` |
+| `cf_t1` | Tipo(s) de conferência pós-desvio — **obrigatório** *(só aparece se cf_gate = yes)* | multi | Separados por `\|\|\|`: `"conf_blind"` = Cega, `"conf_item"` = Item a Item, `"conf_multi"` = Multiplicador, `"conf_ean"` = Bipa EAN |
+| `cf2` | Quantidade de estações de conferência — **obrigatório** *(só aparece se cf_gate = yes)* | texto | `"12"` |
+| `cf_t2` | Motivos que desviam volume para conferência — **obrigatório** *(só aparece se cf_gate = yes)* | multi | `"conf_weight"` = Balança, `"conf_rfid"` = RFID, `"conf_sample"` = Amostragem, `"conf_client"` = Por cliente, `"conf_product"` = Por produto, `"conf_100"` = 100% dos itens |
+| `cf4` | Tolerância da balança dinâmica *(só aparece se cf_gate = yes)* | texto | `"±5g"` ou `"±2%"` |
+
+### Packing (Embalagem Final)
+
+| Campo | Descrição | Tipo | Exemplo / Opções |
+|---|---|---|---|
+| `pk1` | Possui etapa de packing — **gate question**: se `"no"`, campos packing abaixo são ignorados | select | `"yes"`, `"no"` |
 | `pk_auto` | Packing automatizado *(só aparece se pk1 = yes)* | select | `"yes"`, `"no"`, `"tbd"` |
 | `pk_imp` | Possui impressora no packing *(só aparece se pk1 = yes)* | select | `"yes"`, `"no"`, `"tbd"` |
 | `pk_imp_f` | Quem fornece a impressora *(só aparece se pk_imp = yes)* | select (FN) | `"invent"`, `"client"`, `"both_resp"`, `"tbd"` |
@@ -278,6 +301,7 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
 
 | Campo | Descrição | Tipo | Exemplo / Opções |
 |---|---|---|---|
+| `pt_gate` | Tem Palletização & PTL? — **gate question**: se `"no"`, seção é ignorada | select | `"yes"`, `"no"`, `"tbd"` |
 | `pt1` | Tipo de palletização/expedição | select | `"ptl_opt"` = PTL, `"ptm_opt"` = PTM, `"aloca_opt"` = Aloca Pallet, `"no_pal"` = Sem paletização, `"tbd"` |
 | `pt3` | Quantidade total de posições (pallets/gaiolas de destino) | texto | `"168"` |
 | `pt_frag` | Possui Matriz de Fragilidade (classificação de itens frágeis para regras de empilhamento) — ativa `[SE: MATRIZ_FRAGILIDADE]` no Super MD | select | `"yes"`, `"no"`, `"tbd"` |
@@ -322,8 +346,8 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
 
 | Campo | Descrição | Tipo | Exemplo / Opções |
 |---|---|---|---|
-| `in1` | Protocolo/tecnologia de integração | select | `"rest"` = REST, `"idoc"` = IDoc, `"dblink"` = DBLink, `"excel"` = Excel, `"json_api"` = JSON via API, `"json_pasta"` = JSON em pasta, `"outro"` = Outro |
-| `in_resp` | Quem é responsável pela integração | select (FN) | `"invent"`, `"client"`, `"both_resp"`, `"tbd"` |
+| `in1` | Protocolo/tecnologia de integração | select | `"rest"` = REST, `"idoc"` = IDoc, `"dblink"` = DBLink, `"excel"` = Excel, `"json_api"` = JSON via API, `"json_pasta"` = JSON em pasta, `"outro"` = Outro, `"tbd"` = A definir |
+| `in1b` | Protocolo secundário *(só aparece se in1 = outro)* | texto | Descrição do protocolo |
 | `in_endpoint` | Endpoint/URL da integração | texto | `"https://api.cliente.com/wcs"` |
 | `in3` | Timeout máximo aceito para chamadas em milissegundos | texto | `"5000"` |
 
@@ -371,7 +395,6 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
       "g3": "Esteio - RS",
       "g4": "new_proj",
       "g5": "Manhattan Associates",
-      "g6": "SAP S/4HANA",
       "g_golive": "24/06/2026"
     },
     "la": {
@@ -387,6 +410,7 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
       "c2": "no"
     },
     "os": {
+      "os_gate": "yes",
       "os_r": "wcs",
       "os1": "2",
       "os_imp_etq": "yes",
@@ -417,12 +441,11 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
       "fc_if": "invent",
       "fc_re": "invent"
     },
-    "cf": {
+    "pk": {
+      "cf_gate": "yes",
       "cf_t1": "conf_blind|||conf_ean",
       "cf2": "12",
-      "cf_t2": "conf_weight|||conf_sample"
-    },
-    "pk": {
+      "cf_t2": "conf_weight|||conf_sample",
       "pk1": "yes",
       "pk_auto": "no",
       "pk_imp": "yes",
@@ -444,6 +467,7 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
       "st_rc": "yes"
     },
     "pt": {
+      "pt_gate": "yes",
       "pt1": "ptl_opt",
       "pt3": "168",
       "pt_frag": "yes",
@@ -471,7 +495,6 @@ Cada objeto do array `pbl_lines` representa uma linha/zona PBL e contém:
     },
     "in": {
       "in1": "rest",
-      "in_resp": "both_resp",
       "in_endpoint": "https://api.renner.com/wcs",
       "in3": "5000"
     },

@@ -44,6 +44,7 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<NexusProject | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCodinome, setEditCodinome] = useState('');
   const [editClient, setEditClient] = useState('');
   const [editCode, setEditCode] = useState('');
 
@@ -71,19 +72,22 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
   const startEdit = (e: React.MouseEvent, p: NexusProject) => {
     e.stopPropagation();
     setEditingId(p.id);
+    setEditCodinome(p.answers?.g_codinome || p.name || '');
     setEditClient(p.client);
     setEditCode(p.answers?.g2 || p.code);
   };
 
   const saveEdit = (e: React.MouseEvent, p: NexusProject) => {
     e.stopPropagation();
+    const newCodinome = editCodinome.trim();
     const newClient = editClient.trim() || p.client;
     const newCode = editCode.trim() || (p.answers?.g2 || p.code);
     upsertProject({
       ...p,
       client: newClient,
+      name: newCodinome || p.name,
       code: newCode,
-      answers: { ...p.answers, g1: newClient, g2: newCode },
+      answers: { ...p.answers, g1: newClient, g2: newCode, ...(newCodinome ? { g_codinome: newCodinome } : {}) },
       updatedAt: new Date().toISOString(),
     });
     setProjects(loadProjects());
@@ -98,35 +102,14 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
   return (
     <Box className="page-enter" sx={{ p: 3, flex: 1 }}>
 
-      {/* Header bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography sx={{ fontSize: 11, color: 'text.disabled', fontFamily: 'monospace', mb: '4px' }}>
-            NEXUS · PROJETOS
-          </Typography>
-          <Typography sx={{ fontSize: 20, fontWeight: 800, color: 'text.primary', letterSpacing: '-.4px' }}>
-            Kickoffs salvos
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          startIcon={<AddRoundedIcon />}
-          onClick={onNewKickoff}
-          sx={{ fontWeight: 700 }}
-        >
-          Novo Kickoff
-        </Button>
-      </Box>
-
-      {/* Search */}
+      {/* Search + New button */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
       <TextField
         fullWidth size="small"
         value={search}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
         placeholder="Buscar por cliente, código, codinome..."
-        sx={{ mb: 2 }}
+        sx={{ flex: 1 }}
         slotProps={{
           input: {
             startAdornment: (
@@ -144,6 +127,17 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
           },
         }}
       />
+        <Button
+          variant="contained"
+          color="primary"
+          size="small"
+          startIcon={<AddRoundedIcon />}
+          onClick={onNewKickoff}
+          sx={{ fontWeight: 700, flexShrink: 0 }}
+        >
+          Novo Kickoff
+        </Button>
+      </Box>
 
       {/* Empty state */}
       {projects.length === 0 && (
@@ -197,12 +191,22 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
                     >
                       <TextField
                         size="small"
+                        value={editCodinome}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditCodinome(e.target.value)}
+                        label="Codinome"
+                        placeholder="Ex: Projeto Colibri"
+                        autoFocus
+                        onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEdit(e as unknown as React.MouseEvent, p); if (e.key === 'Escape') cancelEdit(e as unknown as React.MouseEvent); }}
+                        sx={{ width: 180 }}
+                        slotProps={{ input: { style: { fontSize: 13, fontWeight: 600 } } }}
+                      />
+                      <TextField
+                        size="small"
                         value={editClient}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditClient(e.target.value)}
                         label="Cliente"
-                        autoFocus
                         onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEdit(e as unknown as React.MouseEvent, p); if (e.key === 'Escape') cancelEdit(e as unknown as React.MouseEvent); }}
-                        sx={{ width: 200 }}
+                        sx={{ width: 180 }}
                         slotProps={{ input: { style: { fontSize: 13 } } }}
                       />
                       <TextField
@@ -217,9 +221,9 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
                       />
                     </Box>
                   ) : (
-                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.75, mb: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, fontSize: 14, color: 'text.primary' }}>
-                        {p.client}
+                        {p.answers?.g_codinome || p.name || p.client}
                       </Typography>
                       <Chip
                         label={displayCode}
@@ -227,16 +231,14 @@ export function ProjetosPage({ onOpenProject, onOpenKickoff, onNewKickoff, refre
                         sx={{ fontSize: 10, height: 18, fontFamily: 'monospace', fontWeight: 700, bgcolor: '#383838', color: 'text.secondary', border: 'none' }}
                       />
                       {p.answers?.g_codinome && (
-                        <Chip
-                          label={p.answers.g_codinome}
-                          size="small"
-                          sx={{ fontSize: 10, height: 18, fontWeight: 600, bgcolor: 'rgba(255,197,0,0.1)', color: 'primary.main', border: '1px solid rgba(255,197,0,0.3)' }}
-                        />
+                        <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
+                          {p.client}
+                        </Typography>
                       )}
                     </Box>
                   )}
 
-                  {!isEditing && p.name && p.name !== p.client && (
+                  {!isEditing && p.name && p.name !== p.client && p.name !== p.answers?.g_codinome && (
                     <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 0.75 }}>
                       {p.name}
                     </Typography>

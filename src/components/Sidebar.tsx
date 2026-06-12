@@ -167,8 +167,7 @@ export function Sidebar({ current, onNavigate, role, onRoleChange, userName, onL
         <Box
           onClick={handleLogoClick}
           sx={{
-            pt: '20px',
-            pb: '16px',
+            height: 52,
             borderBottom: '1px solid',
             borderColor: 'divider',
             display: 'flex',
@@ -194,7 +193,7 @@ export function Sidebar({ current, onNavigate, role, onRoleChange, userName, onL
                 component="img"
                 src="/nexus-logo.png"
                 alt="NEXUS"
-                sx={{ height: 36, display: 'block' }}
+                sx={{ height: 28, display: 'block' }}
                 onError={(e) => {
                   const t = e.currentTarget as HTMLImageElement;
                   t.style.display = 'none';

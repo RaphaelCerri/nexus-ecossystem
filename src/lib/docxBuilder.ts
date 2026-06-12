@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 
 export interface InputMeta {
   projeto: string;
+  codinome?: string;  // nome de uso nos documentos (ex: PAYLESS); se ausente usa meta.projeto
   codigo: string;
   fase?: string;
   revisao?: string;
@@ -524,7 +525,7 @@ export async function generateDocx(
     (!val || /a\s+definir/i.test(val.trim())) ? def : val;
 
   const variables: Record<string, string> = {
-    NOME_PROJETO:             meta.projeto  ?? '',
+    NOME_PROJETO:             meta.codinome ?? meta.projeto ?? '',
     CODIGO_PROJETO:           meta.codigo   ?? '',
     FASE:                     meta.fase     ?? 'ES',
     REVISAO:                  meta.revisao  ?? '01',
@@ -541,7 +542,7 @@ export async function generateDocx(
   };
 
   const codigo  = safeName(meta.codigo  ?? '') || 'PROJ';
-  const projeto = safeName(meta.projeto ?? '') || 'Projeto';
+  const projeto = safeName(meta.codinome ?? meta.projeto ?? '') || 'Projeto';
   const rev     = safeName(meta.revisao ?? '') || '01';
   const filename = `${codigo} - ${projeto} - Especificacao de Software - Rev ${rev}.docx`;
 
